@@ -113,13 +113,18 @@ const More = () => {
             },
             {
               label: "Notes",
-              route: "/teacher/selectClassNotes",
+              route: "/teacher/notes",
               icon: "document-text-outline",
             },
             {
               label: "Class Schedule",
               route: "/teacher/schedule",
               icon: "calendar-outline",
+            },
+            {
+              label: "Fees",
+              route: "/teacher/fees",
+              icon: "card-outline",
             },
           ]}
         />

@@ -45,7 +45,7 @@ export default function TeacherLayout() {
         }}
       />
       <Tabs.Screen
-        name="selectClass"
+        name="attendance"
         options={{
           title: "Attendance",
           tabBarLabel: "Attendance",
@@ -55,7 +55,7 @@ export default function TeacherLayout() {
         }}
       />
       <Tabs.Screen
-        name="selectClassMarks"
+        name="marks"
         options={{
           title: "Marks",
           tabBarLabel: "Marks",
@@ -76,15 +76,10 @@ export default function TeacherLayout() {
       />
 
       {/* Hidden Routes */}
-      <Tabs.Screen name="attendance" options={{ href: null }} />
-      <Tabs.Screen name="selectClassNotes" options={{ href: null }} />
-      <Tabs.Screen name="marks" options={{ href: null }} />
-      <Tabs.Screen name="addNote" options={{ href: null }} />
+      <Tabs.Screen name="fees" options={{ href: null }} />
       <Tabs.Screen name="notes" options={{ href: null }} />
       <Tabs.Screen name="schedule" options={{ href: null }} />
       <Tabs.Screen name="profile" options={{ href: null }} />
-      <Tabs.Screen name="selectSubject" options={{ href: null }} />
-      <Tabs.Screen name="updateNote" options={{ href: null }} />
     </Tabs>
   );
 }

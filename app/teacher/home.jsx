@@ -24,7 +24,7 @@ const dashboardItems = [
     id: "1",
     title: "Attendance",
     icon: "calendar-check-o",
-    route: "/teacher/selectClass",
+    route: "/teacher/attendance",
   },
   {
     id: "2",
@@ -36,13 +36,13 @@ const dashboardItems = [
     id: "3",
     title: "Marks",
     icon: "graduation-cap",
-    route: "/teacher/selectClassMarks",
+    route: "/teacher/marks",
   },
   {
     id: "4",
     title: "Notes",
     icon: "file-text-o",
-    route: "/teacher/selectClassNotes",
+    route: "/teacher/notes",
   },
 ];
 
@@ -146,7 +146,7 @@ const Home = () => {
           />
         </View>
         <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={styles.greeting}>Good Morning, Teacher</Text>
+          <Text style={styles.greeting}>Good Morning, Student</Text>
           <Text style={styles.bannerText}>{teachername}</Text>
           <Text style={styles.bannerSubtitle}>
             {schoolName}, {campusName} Campus

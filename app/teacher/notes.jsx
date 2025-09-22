@@ -212,13 +212,7 @@ export default function NotesScreen() {
         }
       />
 
-      {/* Floating Add Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push("/teacher/addNote")}
-      >
-        <Ionicons name="add" size={28} color={Colors.tertiary} />
-      </TouchableOpacity>
+     
 
       {/* Options Modal */}
       <Modal

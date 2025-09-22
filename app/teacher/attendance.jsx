@@ -1,308 +1,226 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import moment from "moment";
+import React, { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
   FlatList,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { useDispatch, useSelector } from "react-redux";
 import PageHeader from "../../components/PageHeader";
-import {
-  addClassAttendance,
-  getClassAttendance,
-  updateClassAttendance,
-} from "../../redux/actions/attendanceAction";
-import {
-  setAddAttendance,
-  setAddAttendanceStatus,
-} from "../../redux/slices/attendanceSlice";
 import Colors from "../../styles/Colors";
-import ContainerStyles from "../../styles/ContainerStyles";
-import HeaderStyles from "../../styles/HeaderStyles";
 
-const AttendanceScreen = () => {
-  const router = useRouter();
-  const dispatch = useDispatch();
-  const Attendance = useSelector((state) => state.Attendance);
-  const { addAttendance, loading } = Attendance;
-  const { selectedDate, isVisible, selectedclass, attendances, alreadyMarked } =
-    addAttendance;
-
-  const Student = useSelector((state) => state.Student);
-  const { students } = Student;
-
-  const handleAttendance = (student, status) => {
-    const prev = attendances?.[student] || {};
-    const attendanceObj = {
-      ...prev,
-      class: selectedclass?._id,
-      student: String(student),
-      status,
-      date: moment(selectedDate).format("YYYY-MM-DD"),
-    };
-    dispatch(
-      setAddAttendanceStatus({ name: String(student), value: attendanceObj })
+// Generate last 6 months including current
+const getMonths = () => {
+  const months = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(
+      d.toLocaleString("default", { month: "short", year: "numeric" })
     );
-  };
+  }
+  return months;
+};
 
-  const handleSubmit = async () => {
-    try {
-      const payload = Object.values(attendances || {});
-      if (!payload.length) {
-        Alert.alert("Error", "No attendance to submit!");
-        return;
-      }
+// Function to generate dummy data for weekdays only
+const generateDummyAttendance = (monthYear) => {
+  const start = moment(monthYear, "MMM YYYY").startOf("month");
+  const end = moment(monthYear, "MMM YYYY").endOf("month");
 
-      if (alreadyMarked) {
-        await dispatch(
-          updateClassAttendance({ attendances: payload })
-        ).unwrap();
-        Alert.alert("Success", "Attendance updated successfully!", [
-          { text: "OK", onPress: () => router.replace("/teacher/home") },
-        ]);
-      } else {
-        await dispatch(addClassAttendance({ attendances: payload })).unwrap();
-        Alert.alert("Success", "Attendance added successfully!", [
-          { text: "OK", onPress: () => router.replace("/teacher/home") },
-        ]);
-      }
-    } catch (err) {
-      Alert.alert("Error", "Something went wrong while saving attendance");
-    }
-  };
+  const statuses = ["present", "absent", "leave"];
+  const data = [];
 
-  const renderItem = ({ item, index }) => {
-    const studentAttendance = attendances?.[item._id] ?? {};
-    const status = studentAttendance?.status ?? null;
+  for (let d = start.clone(); d.isSameOrBefore(end); d.add(1, "day")) {
+    const day = d.day(); // 0=Sun, 6=Sat
+    if (day === 0 || day === 6) continue; // skip weekends
 
-    return (
-      <View style={styles.studentRow}>
-        <Text style={styles.serial}>{index + 1}.</Text>
-        <Text style={styles.studentName}>{item.name}</Text>
+    // Random status
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    data.push({ date: d.format("YYYY-MM-DD"), status });
+  }
 
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              {
-                backgroundColor:
-                  status === "present" ? Colors.present : Colors.pending,
-              },
-            ]}
-            onPress={() => handleAttendance(item._id, "present")}
-          >
-            <Text style={styles.buttonText}>Present</Text>
-          </TouchableOpacity>
+  return data;
+};
 
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              {
-                backgroundColor:
-                  status === "absent" ? Colors.absent : Colors.pending,
-              },
-            ]}
-            onPress={() => handleAttendance(item._id, "absent")}
-          >
-            <Text style={styles.buttonText}>Absent</Text>
-          </TouchableOpacity>
+const StudentAttendanceScreen = () => {
+  const months = getMonths();
+  const [selectedMonth, setSelectedMonth] = useState(months[0]);
 
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              {
-                backgroundColor:
-                  status === "leave" ? Colors.leave : Colors.pending,
-              },
-            ]}
-            onPress={() => handleAttendance(item._id, "leave")}
-          >
-            <Text style={styles.buttonText}>Leave</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
+  // Generate dummy attendance each time month changes
+  const attendanceData = useMemo(() => {
+    return generateDummyAttendance(selectedMonth);
+  }, [selectedMonth]);
 
-  const onDateChange = (date) => {
-    dispatch(setAddAttendance({ name: "selectedDate", value: date }));
-    dispatch(
-      getClassAttendance({
-        classId: selectedclass?._id,
-        date: moment(date).format("YYYY-MM-DD"),
-      })
-    );
-  };
+  // Count stats
+  const presentCount = attendanceData.filter((a) => a.status === "present").length;
+  const absentCount = attendanceData.filter((a) => a.status === "absent").length;
+  const leaveCount = attendanceData.filter((a) => a.status === "leave").length;
 
-  const setDatePickerVisibility = (value) => [
-    dispatch(setAddAttendance({ name: "isVisible", value })),
-  ];
+  const renderItem = ({ item }) => (
+    <View style={styles.tableRow}>
+      <Text style={styles.dateCell}>
+        {moment(item.date).format("DD MMM YYYY")}
+      </Text>
+      <Text
+        style={[
+          styles.statusCell,
+          item.status === "present" && { color: Colors.present },
+          item.status === "absent" && { color: Colors.absent },
+          item.status === "leave" && { color: Colors.leave },
+        ]}
+      >
+        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+      </Text>
+    </View>
+  );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* Header */}
-      <PageHeader
-        text={`Attendance of class ${selectedclass?.name}-${selectedclass?.section}`}
-      />
-      {alreadyMarked && (
-        <View style={styles.banner}>
-          <Text style={styles.bannerText}>Attendance already marked!</Text>
-        </View>
-      )}
+      <PageHeader text="Attendance" />
 
-      <View style={styles.dateContainer}>
-        <Text style={styles.dateLabel}>Selected Date:</Text>
-        <TouchableOpacity
-          style={styles.dateSelector}
-          onPress={() => setDatePickerVisibility(true)}
+      {/* Month Toggle */}
+      <View style={styles.monthBar}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.monthScroll}
         >
-          <Ionicons
-            name="calendar-outline"
-            size={20}
-            color={Colors.secondaryDark}
-          />
-          <Text style={styles.dateText}>
-            {moment(selectedDate).format("DD MMM YYYY")}
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <DateTimePickerModal
-        isVisible={isVisible}
-        mode="date"
-        date={selectedDate}
-        onConfirm={onDateChange}
-        onHide={() => setDatePickerVisibility(false)}
-        onCancel={() => setDatePickerVisibility(false)}
-      />
-
-      {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={{ marginTop: 10, fontSize: 16 }}>Loading...</Text>
-        </View>
-      ) : (
-        <>
-          <FlatList
-            data={students}
-            keyExtractor={(item) => item._id}
-            renderItem={renderItem}
-            contentContainerStyle={styles.listContainer}
-          />
-
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <View style={styles.submitGradient}>
-              <Text style={styles.submitText}>
-                {alreadyMarked ? "Update" : "Add"} Attendance
+          {months.map((month, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={[
+                styles.monthBtn,
+                selectedMonth === month && styles.monthBtnActive,
+              ]}
+              onPress={() => setSelectedMonth(month)}
+            >
+              <Text
+                style={[
+                  styles.monthText,
+                  selectedMonth === month && styles.monthTextActive,
+                ]}
+              >
+                {month}
               </Text>
-            </View>
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Summary */}
+      <View style={styles.summaryRow}>
+        <View style={[styles.summaryBox, { backgroundColor: Colors.present }]}>
+          <Text style={styles.summaryLabel}>Present</Text>
+          <Text style={styles.summaryCount}>{presentCount}</Text>
+        </View>
+        <View style={[styles.summaryBox, { backgroundColor: Colors.absent }]}>
+          <Text style={styles.summaryLabel}>Absent</Text>
+          <Text style={styles.summaryCount}>{absentCount}</Text>
+        </View>
+        <View style={[styles.summaryBox, { backgroundColor: Colors.leave }]}>
+          <Text style={styles.summaryLabel}>Leave</Text>
+          <Text style={styles.summaryCount}>{leaveCount}</Text>
+        </View>
+      </View>
+
+      {/* Attendance Table */}
+      <View style={styles.tableHeader}>
+        <Text style={[styles.headerCell, { flex: 1 }]}>Date</Text>
+        <Text style={[styles.headerCell, { flex: 1 }]}>Status</Text>
+      </View>
+      <FlatList
+        data={attendanceData}
+        keyExtractor={(item, idx) => idx.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  ...ContainerStyles,
-  ...HeaderStyles,
-  banner: {
-    backgroundColor: Colors.banner,
-    padding: 10,
-    margin: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  bannerText: {
-    color: Colors.secondaryDark,
-    fontWeight: "bold",
-  },
-  dateContainer: {
+  monthBar: {
     marginTop: 8,
-    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
   },
-  dateLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 6,
-  },
-  dateSelector: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.tertiary,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.tertiaryDark,
-  },
-  dateText: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: Colors.secondaryDark,
-  },
-  listContainer: {
-    padding: 16,
-  },
-  studentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    backgroundColor: Colors.tertiary,
-    padding: 12,
-    borderRadius: 12,
-    elevation: 3,
-  },
-  serial: {
-    width: 30,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  studentName: {
-    flex: 1,
-    fontSize: 16,
-  },
-  buttonGroup: {
-    flexDirection: "row",
-  },
-  statusButton: {
-    paddingVertical: 6,
+  monthScroll: {
     paddingHorizontal: 10,
-    borderRadius: 8,
-    marginLeft: 6,
   },
-  buttonText: {
-    color: Colors.tertiary,
-    fontWeight: "bold",
-    fontSize: 12,
+  monthBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: "#f2f2f2",
+    marginRight: 8,
   },
-  submitButton: {
-    margin: 16,
-    borderRadius: 12,
-    overflow: "hidden",
+  monthBtnActive: {
     backgroundColor: Colors.primary,
   },
-  submitGradient: {
-    padding: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 12,
+  monthText: {
+    fontSize: 14,
+    color: "#333",
   },
-  submitText: {
-    color: Colors.tertiary,
-    fontSize: 18,
+  monthTextActive: {
+    color: "#fff",
     fontWeight: "bold",
   },
-  loader: {
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginVertical: 16,
+  },
+  summaryBox: {
     flex: 1,
-    justifyContent: "center",
+    marginHorizontal: 6,
+    padding: 12,
+    borderRadius: 12,
     alignItems: "center",
+  },
+  summaryLabel: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  summaryCount: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 4,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    backgroundColor: "#f9f9f9",
+  },
+  headerCell: {
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  dateCell: {
+    flex: 1,
+    fontSize: 14,
+  },
+  statusCell: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    textTransform: "capitalize",
   },
 });
 
-export default AttendanceScreen;
+export default StudentAttendanceScreen;
