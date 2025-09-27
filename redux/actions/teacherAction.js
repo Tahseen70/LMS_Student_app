@@ -23,25 +23,7 @@ export const loginTeacher = createAsyncThunk(
   }
 );
 
-// ------------------ LOGIN WITH TOKEN ------------------
-export const loginToken = createAsyncThunk(
-  "teacher/token",
-  async (_, thunkAPI) => {
-    try {
-      let resp = await Axios.get("/teacher/token");
-      const teacher = resp.data.user;
-      // const token = resp.data.token;
-      await AsyncStorage.setItem("teacher", JSON.stringify(teacher));
-      // await AsyncStorage.setItem("token", token);
-      return resp.data;
-    } catch (error) {
-      console.log("Token Login Error:", error);
-      return thunkAPI.rejectWithValue(
-        error.response?.data?.message || error.message
-      );
-    }
-  }
-);
+
 
 // ------------------ TIMETABLE ------------------
 export const getTeacherTimeTable = createAsyncThunk(

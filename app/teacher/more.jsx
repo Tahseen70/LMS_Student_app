@@ -26,15 +26,15 @@ import Colors from "../../styles/Colors";
 const More = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const Teacher = useSelector((state) => state.Teacher);
-  const { teacher } = Teacher;
+  const Student = useSelector((state) => state.Student);
+  const { student } = Student;
 
   const [schoolName, setSchoolName] = useState("");
   const [campusName, setCampusName] = useState("");
 
-  const profileUrl = teacher?.profileUrl
-    ? { uri: teacher.profileUrl }
-    : teacher.isMale
+  const profileUrl = student?.profileUrl
+    ? { uri: student.profileUrl }
+    : student.isMale
     ? require("../../assets/user_male.png")
     : require("../../assets/user_female.png");
 
@@ -45,7 +45,7 @@ const More = () => {
 
   const setUpdateEmail = async () => {
     dispatch(resetUpdatePassword());
-    const email = teacher.email;
+    const email = student.email;
     dispatch(setUpdatePassword({ name: "email", value: email }));
     await dispatch(sendOtp({ email }));
     dispatch(setUpdatePassword({ name: "isForgot", value: false }));
@@ -93,7 +93,7 @@ const More = () => {
           </View>
           <View>
             <Text style={[styles.nameText, { color: colors.text }]}>
-              {teacher.name}
+              {student.name}
             </Text>
             <Text style={{ color: colors.text }}>
               {schoolName} , {campusName}

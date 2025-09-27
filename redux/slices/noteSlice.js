@@ -47,6 +47,10 @@ const noteSlice = createSlice({
     setUpdateNote(state, action) {
       state.updateNote[action.payload.name] = action.payload.value;
     },
+    resetNotes(state, action) {
+      state.notes = initialState.notes;
+      state.allNotes = initialState.allNotes;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -56,6 +60,8 @@ const noteSlice = createSlice({
       })
       .addCase(getNotes.fulfilled, (state, action) => {
         const data = action.payload?.notes || {};
+        console.log("DATA=");
+        console.log(data);
         const notes = Array.isArray(data.notes) ? data.notes : [];
         state.notes = notes;
         state.allNotes = [...(state.allNotes || []), ...notes];
@@ -77,6 +83,7 @@ export const {
   setAddNote,
   resetAddNote,
   setUpdateNote,
+  resetNotes,
 } = noteSlice.actions;
 
 export default noteSlice.reducer;

@@ -97,21 +97,15 @@ export const UpdateTeacherNote = createAsyncThunk(
 // Fetch Notes of Teacher by Class and Subject
 export const getNotes = createAsyncThunk(
   "note/getNotes",
-  async ({ classId, subject, page = 1, limit = 10 }, thunkAPI) => {
+  async ({ subjectId, page = 1, limit = 10 }, thunkAPI) => {
     try {
       let params = {
-        classId,
-        subject,
+        subjectId,
         page,
         limit,
       };
-      const resp = await Axios.get(
-        "/note",
-        { params },
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      const resp = await Axios.get("/note/student", { params });
+      console.log(resp.data);
       return resp.data;
     } catch (error) {
       console.log(error);

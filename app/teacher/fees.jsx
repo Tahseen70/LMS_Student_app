@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import moment from "moment";
+import React, { useEffect, useState } from "react";
 import {
   LayoutAnimation,
   Platform,
@@ -10,124 +12,229 @@ import {
   UIManager,
   View,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import ListEmpty from "../../components/ListEmpty";
+import Loader from "../../components/Loader";
 import PageHeader from "../../components/PageHeader";
+import { formatNumber, generateChallan } from "../../config";
+import { getBank } from "../../redux/actions/schoolAction";
+import { getStudentFee } from "../../redux/actions/studentAction";
+import { setStudent } from "../../redux/slices/studentSlice";
 import Colors from "../../styles/Colors";
 
 // Enable LayoutAnimation on Android
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 // Generate last 6 months including current
-const getMonths = () => {
+const getMonths = (count = 12, offset = 0) => {
   const months = [];
   const now = new Date();
-  for (let i = 0; i < 6; i++) {
+  for (let i = offset; i < offset + count; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(
-      d.toLocaleString("default", { month: "short", year: "numeric" })
-    );
+    months.push(d);
   }
   return months;
 };
 
 const FeeScreen = () => {
+  const dispatch = useDispatch();
   const [selectedMonth, setSelectedMonth] = useState(getMonths()[0]);
   const [showDetails, setShowDetails] = useState(false);
-  const months = getMonths();
+  const [months, setMonths] = useState(() => getMonths(12, 0)); // initial 12 months
+  const [offset, setOffset] = useState(12);
+  const Student = useSelector((state) => state.Student);
+  const { fee, loading } = Student;
+
+  const School = useSelector((state) => state.School);
+  const { bank } = School;
+
+  const {
+    amount = 0,
+    lateFee = 0,
+    extraFeeAmount = 0,
+    extraFeeName = "",
+    previousBalance = 0,
+    lmsFee = 0,
+    dueDate = new Date(),
+    isPaid = false,
+    isExpired = false,
+    isFineWavedOff = false,
+  } = fee || {};
+
+  let netAmount = amount + extraFeeAmount + previousBalance + lmsFee;
+  const isLateFee = new Date() > new Date(dueDate) && !isFineWavedOff;
+  const hasExtraFee = Boolean(extraFeeAmount) && Boolean(extraFeeName);
+  if (isLateFee) netAmount += lateFee;
+  if (hasExtraFee) netAmount += extraFeeAmount;
 
   const toggleDetails = () => {
     LayoutAnimation.easeInEaseOut();
     setShowDetails(!showDetails);
   };
 
+  const loadMoreMonths = () => {
+    const moreMonths = getMonths(6, offset); // load 6 more
+    setMonths((prev) => [...prev, ...moreMonths]);
+    setOffset(offset + 6);
+  };
+
+  const onMonthChange = (month) => {
+    const formatted = moment(month)
+      .clone()
+      .startOf("month")
+      .format("YYYY-MM-DD");
+    dispatch(getStudentFee({ month: formatted }));
+    setSelectedMonth(month); // keep Date object for UI
+  };
+
+  useEffect(() => {
+    (async () => {
+      const campusStr = await AsyncStorage.getItem("school");
+      const campus = JSON.parse(campusStr);
+      const campusId = campus._id;
+      dispatch(getBank({ campus: campusId }));
+
+      const now = new Date();
+      const formatted = moment(now)
+        .clone()
+        .startOf("month")
+        .format("YYYY-MM-DD");
+      dispatch(getStudentFee({ month: formatted }));
+      setSelectedMonth(now); // keep Date object for UI
+    })();
+  }, [dispatch]);
+
+  const DownloadChallan = async () => {
+    dispatch(setStudent({ name: "loading", value: true }));
+    const campusStr = await AsyncStorage.getItem("school");
+    await generateChallan(fee, bank, campusStr);
+    dispatch(setStudent({ name: "loading", value: false }));
+    // await createDummyPDF();
+  };
+
+  const formatMonth = (m) => moment(m).format("YYYY-MM-DD");
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* Header */}
       <PageHeader text="Fees" />
-
+      <Loader loading={loading} />
       {/* Month Toggles */}
       <View style={styles.monthBar}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.monthScroll}
+          onMomentumScrollEnd={(e) => {
+            const { contentOffset, contentSize, layoutMeasurement } =
+              e.nativeEvent;
+            const isEndReached =
+              contentOffset.x + layoutMeasurement.width >=
+              contentSize.width - 50; // near end
+            if (isEndReached) {
+              loadMoreMonths();
+            }
+          }}
         >
-          {months.map((month, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[
-                styles.monthBtn,
-                selectedMonth === month && styles.monthBtnActive,
-              ]}
-              onPress={() => setSelectedMonth(month)}
-            >
-              <Text
-                style={[
-                  styles.monthText,
-                  selectedMonth === month && styles.monthTextActive,
-                ]}
+          {months.map((month, idx) => {
+            const isActive =
+              selectedMonth.getFullYear() === month.getFullYear() &&
+              selectedMonth.getMonth() === month.getMonth();
+            return (
+              <TouchableOpacity
+                key={idx}
+                style={[styles.monthBtn, isActive && styles.monthBtnActive]}
+                onPress={() => {
+                  onMonthChange(month);
+                }}
               >
-                {month}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[styles.monthText, isActive && styles.monthTextActive]}
+                >
+                  {month.toLocaleString("default", {
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
 
       {/* Fee Box */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Fee</Text>
+      {loading ? (
+        <Loader loading={loading} />
+      ) : fee ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Fee</Text>
 
-        <View style={styles.row}>
-          <Text style={styles.amount}>Rs. 3000</Text>
-          <Text style={styles.status}>PENDING</Text>
-        </View>
-
-        <Text style={styles.dueText}>
-          to be paid before{" "}
-          <Text style={{ fontWeight: "bold" }}>10-SEP-25</Text>
-        </Text>
-
-        {/* Expanded Fee Breakdown */}
-        {showDetails && (
-          <View style={styles.breakdown}>
-            <View style={styles.breakdownRow}>
-              <Text>Academic Fees</Text>
-              <Text>Rs. 2000</Text>
-            </View>
-            <View style={styles.breakdownRow}>
-              <Text>LMS Fees</Text>
-              <Text>Rs. 500</Text>
-            </View>
-            <View style={styles.breakdownRow}>
-              <Text>Exam Fees</Text>
-              <Text>Rs. 300</Text>
-            </View>
-            <View style={styles.breakdownRow}>
-              <Text>Misc Fees</Text>
-              <Text>Rs. 200</Text>
-            </View>
-            <View style={styles.breakdownRow}>
-              <Text style={{ fontWeight: "bold" }} >Total</Text>
-              <Text style={{ fontWeight: "bold" }}>Rs. 3000</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Action Buttons */}
-        <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.detailsBtn} onPress={toggleDetails}>
-            <Text style={styles.detailsText}>
-              {showDetails ? "Hide Details" : "Details"}
+          <View style={styles.row}>
+            <Text style={styles.amount}>Rs. {formatNumber(netAmount)}</Text>
+            <Text style={styles.status}>
+              {isExpired ? "EXPIRED" : isPaid ? "PAID" : "PENDING"}
             </Text>
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.payBtn}>
-            <Text style={styles.payText}>Download challan</Text>
-          </TouchableOpacity>
+          <Text style={styles.dueText}>
+            to be paid before{" "}
+            <Text style={{ fontWeight: "bold" }}>
+              {moment(dueDate).format("MMM DD, YYYY")}
+            </Text>
+          </Text>
+
+          {showDetails && (
+            <View style={styles.breakdown}>
+              <View style={styles.breakdownRow}>
+                <Text>Academic Fees</Text>
+                <Text>Rs. {formatNumber(amount)}</Text>
+              </View>
+              <View style={styles.breakdownRow}>
+                <Text>LMS Fees</Text>
+                <Text>Rs. {formatNumber(lmsFee)}</Text>
+              </View>
+              {hasExtraFee && (
+                <View style={styles.breakdownRow}>
+                  <Text>{String(extraFeeName)}</Text>
+                  <Text>Rs. {formatNumber(extraFeeAmount)}</Text>
+                </View>
+              )}
+
+              {isLateFee && (
+                <View style={styles.breakdownRow}>
+                  <Text>Late Fees</Text>
+                  <Text>Rs. {formatNumber(lateFee)}</Text>
+                </View>
+              )}
+              <View style={styles.breakdownRow}>
+                <Text style={{ fontWeight: "bold" }}>Total</Text>
+                <Text style={{ fontWeight: "bold" }}>
+                  Rs. {formatNumber(netAmount)}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <View style={styles.btnRow}>
+            <TouchableOpacity style={styles.detailsBtn} onPress={toggleDetails}>
+              <Text style={styles.detailsText}>
+                {showDetails ? "Hide Details" : "Details"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.payBtn} onPress={DownloadChallan}>
+              <Text style={styles.payText}>Download challan</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      ) : (
+        <ListEmpty text="Fee Not Found" />
+      )}
     </SafeAreaView>
   );
 };
@@ -136,8 +243,10 @@ export default FeeScreen;
 
 const styles = StyleSheet.create({
   monthBar: {
-    height: 44,
-    justifyContent: "center",
+    marginTop: 8,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
   },
   monthScroll: {
     paddingHorizontal: 10,
@@ -239,5 +348,18 @@ const styles = StyleSheet.create({
   payText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  shimmer: {
+    width: "90%",
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: Colors.secondary,
+    opacity: 0.3,
+    marginTop: 16,
+    marginHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 16,
+    borderRadius: 12,
+    elevation: 3,
   },
 });

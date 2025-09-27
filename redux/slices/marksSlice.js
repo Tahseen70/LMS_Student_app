@@ -3,6 +3,8 @@ import { resetState } from "../actions/globalAction";
 import {
   addClassMarks,
   getAllExams,
+  getAllGrades,
+  getStudentExams,
   getTeacherExamResult,
 } from "../actions/markAction";
 
@@ -19,6 +21,14 @@ const initialState = {
     marks: {},
     alreadyGraded: false,
   },
+  selectedExam: null,
+  results: {
+    showGrades: false,
+    showResult: false,
+    showRemarks: false,
+    studentResults: [],
+  },
+  grades: [],
 };
 
 const marksSlice = createSlice({
@@ -59,6 +69,18 @@ const marksSlice = createSlice({
       .addCase(addClassMarks.rejected, (state) => {
         state.loading = false;
       })
+      // Get Students Exams
+      .addCase(getStudentExams.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getStudentExams.fulfilled, (state, action) => {
+        const data = action.payload.exams;
+        state.results = data;
+        state.loading = false;
+      })
+      .addCase(getStudentExams.rejected, (state) => {
+        state.loading = false;
+      })
       // Get Exam Result for Student
       .addCase(getTeacherExamResult.pending, (state) => {
         state.loading = true;
@@ -80,7 +102,18 @@ const marksSlice = createSlice({
       .addCase(getTeacherExamResult.rejected, (state) => {
         state.loading = false;
       })
-
+      // Get All Grades
+      .addCase(getAllGrades.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getAllGrades.fulfilled, (state, action) => {
+        const data = action.payload.grades;
+        state.grades = data;
+        state.loading = false;
+      })
+      .addCase(getAllGrades.rejected, (state, action) => {
+        state.loading = false;
+      })
       // RESET STATE
       .addCase(resetState, () => initialState);
   },

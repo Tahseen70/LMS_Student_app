@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Grader Teacher",
+    "name": "Grader",
     "slug": "grader-lms-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -34,6 +34,14 @@
           "imageWidth": 180,
           "resizeMode": "contain",
           "backgroundColor": "#1975C0"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
+          "isAccessMediaLocationEnabled": true
         }
       ]
     ],

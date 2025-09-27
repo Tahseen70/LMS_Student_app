@@ -6,12 +6,12 @@ import { hexToRgba } from "../../config";
 import Colors from "../../styles/Colors";
 
 export default function TeacherLayout() {
-  const Teacher = useSelector((state) => state.Teacher);
-  const { teacher } = Teacher;
+  const Student = useSelector((state) => state.Student);
+  const { student } = Student;
   const insets = useSafeAreaInsets();
 
   // Redirect to login if user is not authenticated
-  if (!teacher) return <Redirect href="/auth/splash" />;
+  if (!student) return <Redirect href="/auth/splash" />;
 
   return (
     <Tabs

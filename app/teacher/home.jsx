@@ -126,14 +126,14 @@ const Home = () => {
       ])
     ).start();
   }, []);
-  const Teacher = useSelector((state) => state.Teacher);
-  const teacher = Teacher.teacher;
-  const profileUrl = teacher?.profileUrl
-    ? { uri: teacher.profileUrl }
-    : teacher.isMale
+  const Student = useSelector((state) => state.Student);
+  const student = Student.student;
+  const profileUrl = student?.profileUrl
+    ? { uri: student.profileUrl }
+    : student.isMale
     ? require("../../assets/user_male.png")
     : require("../../assets/user_female.png");
-  const teachername = teacher.name;
+  const studentName = student.name;
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.tertiaryLight }}>
@@ -147,7 +147,7 @@ const Home = () => {
         </View>
         <View style={{ flex: 1, marginLeft: 10 }}>
           <Text style={styles.greeting}>Good Morning, Student</Text>
-          <Text style={styles.bannerText}>{teachername}</Text>
+          <Text style={styles.bannerText}>{studentName}</Text>
           <Text style={styles.bannerSubtitle}>
             {schoolName}, {campusName} Campus
           </Text>

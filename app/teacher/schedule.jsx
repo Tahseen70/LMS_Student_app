@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import {
@@ -7,13 +6,11 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
-import { getTeacherTimeTable } from "../../redux/actions/teacherAction";
+import { getStudentTimeTable } from "../../redux/actions/studentAction";
 import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
 import HeaderStyles from "../../styles/HeaderStyles";
@@ -25,9 +22,8 @@ const cellWidth = 100;
 const TeacherScheduleScreen = () => {
   const router = useRouter();
   const dispatch = useDispatch();
-  const Teacher = useSelector((state) => state.Teacher);
-  const { loading, timeTable } = Teacher;
-  const timetableData = timeTable;
+  const Student = useSelector((state) => state.Student);
+  const { loading, timeTable, timeDuration } = Student;
 
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -37,14 +33,16 @@ const TeacherScheduleScreen = () => {
 
   // Format data
   const formatData = (data) => {
+    console.log("DATA=");
+    console.log(data);
     let days = ["monday", "tuesday", "wednesday", "thursday"];
-    if (data.timeDuration.isFridayOn) days.push("friday");
+    if (timeDuration?.isFridayOn) days.push("friday");
 
-    if (data.timeDuration.isSaturdayOn) days.push("saturday");
+    if (timeDuration?.isSaturdayOn) days.push("saturday");
 
     const result = {};
-    const numberOfClasses = data.timeDuration.numberOfClasses || 0;
-    const timetable = data.timetable;
+    const numberOfClasses = timeDuration?.numberOfClasses || 0;
+    const timetable = data;
     if (timetable) {
       days.forEach((day) => {
         result[capitalize(day)] = [];
@@ -52,18 +50,18 @@ const TeacherScheduleScreen = () => {
         const periods = timetable[day] || [];
         for (let i = 0; i < numberOfClasses; i++) {
           const periodData = findPeriodData(periods, i);
-          if (!periodData) {
+          console.log("periodData=");
+          console.log(periodData);
+          if (periodData?.isFree) {
             // Free period
             result[capitalize(day)][i] = {
-              className: "Free",
+              teacher: "Free",
               subject: "",
             };
           } else {
             // Scheduled period
             result[capitalize(day)][i] = {
-              className: `${periodData.class.name}${
-                periodData.class.section ? " " + periodData.class.section : ""
-              }`,
+              teacher: `${periodData.teacher.name}`,
               subject: periodData.subject.name,
             };
           }
@@ -75,49 +73,26 @@ const TeacherScheduleScreen = () => {
   };
 
   useEffect(() => {
-    dispatch(getTeacherTimeTable());
+    dispatch(getStudentTimeTable());
   }, [dispatch]);
 
   const hasTimetable =
-    !!timetableData &&
-    !!timetableData.timetable &&
+    !!timeTable &&
+    !!timeTable &&
     // timetable should be a non-empty object (at least one day)
-    Object.keys(timetableData.timetable).length > 0 &&
+    Object.keys(timeTable).length > 0 &&
     // timeDuration must exist and numberOfClasses must be a positive integer
-    !!timetableData.timeDuration &&
-    Number.isInteger(timetableData.timeDuration.numberOfClasses) &&
-    timetableData.timeDuration.numberOfClasses > 0;
+    !!timeDuration &&
+    Number.isInteger(timeDuration?.numberOfClasses) &&
+    timeDuration?.numberOfClasses > 0;
 
-  if (!hasTimetable) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <View style={styles.headerRow}>
-              <TouchableOpacity
-                onPress={() => router.back()}
-                style={styles.backButton}
-              >
-                <Ionicons
-                  name="arrow-back-outline"
-                  size={28}
-                  color={Colors.tertiary}
-                />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>Weekly Schedule</Text>
-              <View style={{ width: 28 }} />
-            </View>
-          </View>
-          <ListEmpty text={"Timetable Not Found"} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const schedule = formatData(timetableData);
-  const numClasses = timetableData.timeDuration.numberOfClasses || 0;
+  const schedule = formatData(timeTable);
+  console.log("schedule=");
+  console.log(schedule);
+  console.log(timeDuration);
+  const numClasses = timeDuration?.numberOfClasses || 0;
   const days = Object.keys(schedule);
+  console.log(days);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -167,9 +142,7 @@ const TeacherScheduleScreen = () => {
                     <React.Fragment key={i}>
                       <View style={styles.cell}>
                         <View style={{ alignItems: "center" }}>
-                          <Text style={styles.cellText}>
-                            {period.className}
-                          </Text>
+                          <Text style={styles.cellText}>{period.teacher}</Text>
                           {period.subject ? (
                             <Text style={styles.subjectText}>
                               {period.subject}
@@ -267,17 +240,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
     textAlign: "center",
-  },
-  loaderOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 100,
   },
 });
 

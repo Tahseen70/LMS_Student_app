@@ -24,9 +24,9 @@ Axios.interceptors.request.use(
       config.baseURL = `${serverUrl}/api`;
 
       // Set Authorization header if available
-      const teacher = await AsyncStorage.getItem("teacher");
+      const student = await AsyncStorage.getItem("student");
       const token = await AsyncStorage.getItem("token");
-      if (teacher && token) {
+      if (student && token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
 

@@ -1,5 +1,5 @@
 import moment from "moment";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   SafeAreaView,
@@ -9,105 +9,126 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import ListEmpty from "../../components/ListEmpty";
+import Loader from "../../components/Loader";
 import PageHeader from "../../components/PageHeader";
+import {
+  getAttendanceByMonth,
+  getAttendanceStatsByMonth,
+} from "../../redux/actions/attendanceAction";
 import Colors from "../../styles/Colors";
 
-// Generate last 6 months including current
-const getMonths = () => {
+// Function to generate N months backwards from now
+const getMonths = (count = 12, offset = 0) => {
   const months = [];
   const now = new Date();
-  for (let i = 0; i < 12; i++) {
+  for (let i = offset; i < offset + count; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(
-      d.toLocaleString("default", { month: "short", year: "numeric" })
-    );
+    months.push(d);
   }
   return months;
 };
 
-// Function to generate dummy data for weekdays only
-const generateDummyAttendance = (monthYear) => {
-  const start = moment(monthYear, "MMM YYYY").startOf("month");
-  const end = moment(monthYear, "MMM YYYY").endOf("month");
-
-  const statuses = ["present", "absent", "leave"];
-  const data = [];
-
-  for (let d = start.clone(); d.isSameOrBefore(end); d.add(1, "day")) {
-    const day = d.day(); // 0=Sun, 6=Sat
-    if (day === 0 || day === 6) continue; // skip weekends
-
-    // Random status
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    data.push({ date: d.format("YYYY-MM-DD"), status });
-  }
-
-  return data;
-};
-
 const StudentAttendanceScreen = () => {
-  const months = getMonths();
+  const [months, setMonths] = useState(() => getMonths(12, 0)); // initial 12 months
   const [selectedMonth, setSelectedMonth] = useState(months[0]);
-
+  const [offset, setOffset] = useState(12); // how many months already loaded
+  const dispatch = useDispatch();
+  const Attendance = useSelector((state) => state.Attendance);
+  const { attendances, stats, loading } = Attendance;
+  const { present, absent, leave } = stats;
+  console.log(attendances);
   // Generate dummy attendance each time month changes
-  const attendanceData = useMemo(() => {
-    return generateDummyAttendance(selectedMonth);
-  }, [selectedMonth]);
 
-  // Count stats
-  const presentCount = attendanceData.filter((a) => a.status === "present").length;
-  const absentCount = attendanceData.filter((a) => a.status === "absent").length;
-  const leaveCount = attendanceData.filter((a) => a.status === "leave").length;
+  const renderItem = ({ item }) => {
+    console.log(item);
+    return (
+      <View style={styles.tableRow}>
+        <Text style={styles.dateCell}>
+          {moment(item.date).format("DD MMM YYYY")}
+        </Text>
+        <Text
+          style={[
+            styles.statusCell,
+            item.status === "present" && { color: Colors.present },
+            item.status === "absent" && { color: Colors.absent },
+            item.status === "leave" && { color: Colors.leave },
+          ]}
+        >
+          {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+        </Text>
+      </View>
+    );
+  };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.tableRow}>
-      <Text style={styles.dateCell}>
-        {moment(item.date).format("DD MMM YYYY")}
-      </Text>
-      <Text
-        style={[
-          styles.statusCell,
-          item.status === "present" && { color: Colors.present },
-          item.status === "absent" && { color: Colors.absent },
-          item.status === "leave" && { color: Colors.leave },
-        ]}
-      >
-        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-      </Text>
-    </View>
-  );
+  // Load more months when scrolled to end
+  const loadMoreMonths = () => {
+    const moreMonths = getMonths(6, offset); // load 6 more
+    setMonths((prev) => [...prev, ...moreMonths]);
+    setOffset(offset + 6);
+  };
+
+  const onMonthChange = (month) => {
+    const m = moment(month);
+    const date = m.clone().startOf("month").format("YYYY-MM-DD");
+    dispatch(getAttendanceByMonth({ date }));
+    dispatch(getAttendanceStatsByMonth({ date }));
+    setSelectedMonth(month); // also keep Date object here
+  };
+
+  useEffect(() => {
+    const now = new Date();
+    const m = moment(now);
+    const date = m.clone().startOf("month").format("YYYY-MM-DD");
+    dispatch(getAttendanceByMonth({ date }));
+    dispatch(getAttendanceStatsByMonth({ date }));
+    setSelectedMonth(now); // keep Date object!
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* Header */}
       <PageHeader text="Attendance" />
-
+      <Loader loading={loading} />
       {/* Month Toggle */}
       <View style={styles.monthBar}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.monthScroll}
+          onMomentumScrollEnd={(e) => {
+            const { contentOffset, contentSize, layoutMeasurement } =
+              e.nativeEvent;
+            const isEndReached =
+              contentOffset.x + layoutMeasurement.width >=
+              contentSize.width - 50; // near end
+            if (isEndReached) {
+              loadMoreMonths();
+            }
+          }}
         >
-          {months.map((month, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[
-                styles.monthBtn,
-                selectedMonth === month && styles.monthBtnActive,
-              ]}
-              onPress={() => setSelectedMonth(month)}
-            >
-              <Text
-                style={[
-                  styles.monthText,
-                  selectedMonth === month && styles.monthTextActive,
-                ]}
+          {months.map((month, idx) => {
+            const isActive =
+              selectedMonth.getFullYear() === month.getFullYear() &&
+              selectedMonth.getMonth() === month.getMonth();
+            return (
+              <TouchableOpacity
+                key={idx}
+                style={[styles.monthBtn, isActive && styles.monthBtnActive]}
+                onPress={() => onMonthChange(month)}
               >
-                {month}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[styles.monthText, isActive && styles.monthTextActive]}
+                >
+                  {month.toLocaleString("default", {
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
 
@@ -115,29 +136,38 @@ const StudentAttendanceScreen = () => {
       <View style={styles.summaryRow}>
         <View style={[styles.summaryBox, { backgroundColor: Colors.present }]}>
           <Text style={styles.summaryLabel}>Present</Text>
-          <Text style={styles.summaryCount}>{presentCount}</Text>
+          <Text style={styles.summaryCount}>{present.toString()}</Text>
         </View>
         <View style={[styles.summaryBox, { backgroundColor: Colors.absent }]}>
           <Text style={styles.summaryLabel}>Absent</Text>
-          <Text style={styles.summaryCount}>{absentCount}</Text>
+          <Text style={styles.summaryCount}>{absent.toString()}</Text>
         </View>
         <View style={[styles.summaryBox, { backgroundColor: Colors.leave }]}>
           <Text style={styles.summaryLabel}>Leave</Text>
-          <Text style={styles.summaryCount}>{leaveCount}</Text>
+          <Text style={styles.summaryCount}>{leave.toString()}</Text>
         </View>
       </View>
 
       {/* Attendance Table */}
-      <View style={styles.tableHeader}>
-        <Text style={[styles.headerCell, { flex: 1 }]}>Date</Text>
-        <Text style={[styles.headerCell, { flex: 1 }]}>Status</Text>
+      <View>
+        <FlatList
+          ListHeaderComponent={
+            <View style={styles.tableHeader}>
+              <Text style={[styles.headerCell, { flex: 1 }]}>Date</Text>
+              <Text style={[styles.headerCell, { flex: 1 }]}>Status</Text>
+            </View>
+          }
+          data={attendances}
+          keyExtractor={(item, idx) => idx.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          ListEmptyComponent={
+            !loading && attendances.length === 0 ? (
+              <ListEmpty text="No Attendances Found." />
+            ) : null
+          }
+        />
       </View>
-      <FlatList
-        data={attendanceData}
-        keyExtractor={(item, idx) => idx.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
     </SafeAreaView>
   );
 };
@@ -145,6 +175,7 @@ const StudentAttendanceScreen = () => {
 const styles = StyleSheet.create({
   monthBar: {
     marginTop: 8,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
   },

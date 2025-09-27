@@ -32,3 +32,21 @@ export const getAllcampuses = createAsyncThunk(
     }
   }
 );
+
+
+export const getBank = createAsyncThunk(
+  "school/bank",
+  async ({ campus }, thunkAPI) => {
+    try {
+      let params = { campus };
+      const resp = await Axios.get(`${BASE_URL}/bank`, { params });
+      console.log(resp.data);
+      return resp.data;
+    } catch (error) {
+      console.log("Error fetching bank:", error);
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);

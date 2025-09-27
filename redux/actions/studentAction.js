@@ -1,8 +1,49 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import Axios from "../../config/api";
 
+export const loginStudent = createAsyncThunk(
+  "student/login",
+  async (payload, thunkAPI) => {
+    try {
+      const { email, password } = payload;
+      let resp = await Axios.post("/student/login", { email, password });
+      const student = resp.data.user;
+      const token = resp.data.token;
+      await AsyncStorage.setItem("student", JSON.stringify(student));
+      await AsyncStorage.setItem("token", token);
+      return resp.data;
+    } catch (error) {
+      console.log("Login Error:", error);
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
+// ------------------ LOGIN WITH TOKEN ------------------
+export const loginToken = createAsyncThunk(
+  "teacher/token",
+  async (_, thunkAPI) => {
+    try {
+      let resp = await Axios.get("/student/token");
+      const student = resp.data.user;
+      // const token = resp.data.token;
+      await AsyncStorage.setItem("student", JSON.stringify(student));
+      // await AsyncStorage.setItem("token", token);
+      return resp.data;
+    } catch (error) {
+      console.log("Token Login Error:", error);
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
 export const getClassStudents = createAsyncThunk(
-  "teacher/getClassStudents",
+  "student/getClassStudents",
   async ({ classId }, thunkAPI) => {
     try {
       const formData = new FormData();
@@ -12,6 +53,39 @@ export const getClassStudents = createAsyncThunk(
       });
       return resp.data;
     } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
+// ------------------ TIMETABLE ------------------
+export const getStudentTimeTable = createAsyncThunk(
+  "student/getStudentTimeTable",
+  async (_, thunkAPI) => {
+    try {
+      let resp = await Axios.get("/student/timeTable");
+      console.log(resp.data);
+      return resp.data;
+    } catch (error) {
+      console.log("Error fetching timetable:", error);
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
+export const getStudentFee = createAsyncThunk(
+  "student/getStudentFee",
+  async ({ month }, thunkAPI) => {
+    try {
+      let params = { month };
+      let resp = await Axios.get("/fee/student/month", { params });
+      return resp.data;
+    } catch (error) {
+      console.log("Error fetching timetable:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );

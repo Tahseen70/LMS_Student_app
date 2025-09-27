@@ -4,7 +4,6 @@ import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   Image,
@@ -18,13 +17,12 @@ import {
   View,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import Loader from "../../components/Loader";
 import { hexToRgba } from "../../config";
-import { loginTeacher, loginToken } from "../../redux/actions/teacherAction";
+import { loginStudent, loginToken } from "../../redux/actions/studentAction";
 import { setSchool } from "../../redux/slices/schoolSlice";
-import {
-  resetUpdatePassword,
-  setTeacher,
-} from "../../redux/slices/teacherSlice";
+import { setStudent } from "../../redux/slices/studentSlice";
+import { resetUpdatePassword } from "../../redux/slices/teacherSlice";
 import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
 
@@ -33,8 +31,10 @@ const LoginScreen = () => {
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const buttonScale = useRef(new Animated.Value(1)).current;
-  const Teacher = useSelector((state) => state.Teacher);
-  const { loading, userId, password, teacher } = Teacher;
+
+  const Student = useSelector((state) => state.Student);
+  const { student, email, password, loading } = Student;
+
   const School = useSelector((state) => state.School);
   const { selectedSchool } = School;
   const [hasToken, setHasToken] = useState(false);
@@ -45,7 +45,7 @@ const LoginScreen = () => {
         const token = await AsyncStorage.getItem("token");
         if (token) setHasToken(true);
 
-        if (teacher) router.replace("/teacher/home");
+        if (student) router.replace("/teacher/home");
 
         const campus = await AsyncStorage.getItem("school");
 
@@ -84,7 +84,7 @@ const LoginScreen = () => {
   }, []);
 
   const handleLogin = async () => {
-    if (!userId.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       Alert.alert("Missing Credentials", "Please enter both ID and password.");
       return;
     }
@@ -102,13 +102,11 @@ const LoginScreen = () => {
       }),
     ]).start();
 
-    const resultAction = await dispatch(
-      loginTeacher({ email: userId, password })
-    );
-    if (loginTeacher.fulfilled.match(resultAction)) {
+    const resultAction = await dispatch(loginStudent({ email, password }));
+    if (loginStudent.fulfilled.match(resultAction)) {
       router.replace("/teacher/home");
     }
-    if (loginTeacher.rejected.match(resultAction)) {
+    if (loginStudent.rejected.match(resultAction)) {
       Alert.alert("Error Occured", String(resultAction.payload));
     }
   };
@@ -154,7 +152,7 @@ const LoginScreen = () => {
 
   const onChange = (e) => {
     const { name, value } = e;
-    dispatch(setTeacher({ name, value }));
+    dispatch(setStudent({ name, value }));
   };
 
   const onCloseClick = async () => {
@@ -174,11 +172,7 @@ const LoginScreen = () => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.container}>
-          {loading && (
-            <View style={styles.loaderOverlay}>
-              <ActivityIndicator size="large" color={Colors.primary} />
-            </View>
-          )}
+          <Loader loading={loading} />
 
           <View style={styles.header}>
             <View style={styles.logoWrapper}>
@@ -209,8 +203,8 @@ const LoginScreen = () => {
               placeholder="Enter Email"
               placeholderTextColor={hexToRgba(Colors.secondary, 0.7)}
               style={styles.input}
-              value={userId}
-              onChangeText={(text) => onChange({ name: "userId", value: text })}
+              value={email}
+              onChangeText={(text) => onChange({ name: "email", value: text })}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -380,16 +374,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-  },
-  loaderOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 100,
   },
 });

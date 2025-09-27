@@ -1,6 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { resetState } from "../actions/globalAction";
-import { getAllcampuses, getAllschools } from "../actions/schoolAction";
+import {
+  getAllcampuses,
+  getAllschools,
+  getBank,
+} from "../actions/schoolAction";
 
 const initialState = {
   schools: [],
@@ -8,6 +12,7 @@ const initialState = {
   loading: false,
   selectedCampus: null,
   selectedSchool: null,
+  bank: null,
 };
 
 const schoolSlice = createSlice({
@@ -43,7 +48,18 @@ const schoolSlice = createSlice({
       .addCase(getAllcampuses.rejected, (state) => {
         state.loading = false;
       })
-
+      // Get Bank
+      .addCase(getBank.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getBank.fulfilled, (state, action) => {
+        const data = action.payload.bank;
+        state.bank = data;
+        state.loading = false;
+      })
+      .addCase(getBank.rejected, (state, action) => {
+        state.loading = false;
+      })
       // RESET STATE
       .addCase(resetState, (state) => ({
         ...initialState,

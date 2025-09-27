@@ -20,18 +20,16 @@ const Profile = () => {
   const router = useRouter();
 
   // Get teacher data from Redux
-  const Teacher = useSelector((state) => state.Teacher);
-  const { teacher } = Teacher;
+  const Student = useSelector((state) => state.Student);
+  const { student } = Student;
   const {
     name = "",
     email = "",
     cnic = "",
-    passport = "",
     phoneNumber = "",
     profileUrl = "",
     isMale = false,
-    isForeigner = false,
-  } = teacher;
+  } = student;
 
   // Local state for school/campus from AsyncStorage
   const [schoolName, setSchoolName] = useState("");
@@ -102,7 +100,7 @@ const Profile = () => {
             <Ionicons name="id-card-outline" size={22} color={Colors.primary} />
           </View>
           <Text style={styles.infoText}>
-            {isForeigner ? passport : cnic ? formatCNIC(cnic) : "No CNIC"}
+            {cnic ? formatCNIC(cnic) : "No CNIC"}
           </Text>
         </View>
       </ScrollView>

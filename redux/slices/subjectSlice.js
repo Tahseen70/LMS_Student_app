@@ -5,6 +5,7 @@ import { getSubjects } from "../actions/subjectAction";
 const initialState = {
   loading: false,
   subjects: [],
+  selectedSubject: null,
 };
 
 const subjectSlice = createSlice({

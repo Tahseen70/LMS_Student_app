@@ -63,3 +63,41 @@ export const updateClassAttendance = createAsyncThunk(
     }
   }
 );
+
+export const getAttendanceByMonth = createAsyncThunk(
+  "teacher/getAttendanceByMonth",
+  async ({ date }, thunkAPI) => {
+    try {
+      let params = {
+        date: String(date),
+      };
+      console.log(date);
+      const resp = await Axios.get("/attendance/student/month", { params });
+      console.log(resp.data);
+      return resp.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
+export const getAttendanceStatsByMonth = createAsyncThunk(
+  "teacher/getAttendanceStatsByMonth",
+  async ({ date }, thunkAPI) => {
+    try {
+      let params = {
+        date: String(date),
+      };
+      console.log(date);
+      const resp = await Axios.get("/attendance/student/month/stats", { params });
+      console.log(resp.data);
+      return resp.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);

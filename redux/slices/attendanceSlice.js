@@ -1,7 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
-    addClassAttendance,
-    getClassAttendance,
+  addClassAttendance,
+  getAttendanceByMonth,
+  getAttendanceStatsByMonth,
+  getClassAttendance,
 } from "../actions/attendanceAction";
 import { resetState } from "../actions/globalAction";
 
@@ -13,6 +15,12 @@ const initialState = {
     selectedDate: new Date(),
     attendances: {},
     selectedClass: null,
+  },
+  attendances: [],
+  stats: {
+    present: 0,
+    absent: 0,
+    leave: 0,
   },
 };
 
@@ -65,6 +73,30 @@ const attendanceSlice = createSlice({
         state.loading = false;
       })
       .addCase(addClassAttendance.rejected, (state) => {
+        state.loading = false;
+      })
+      // Get Student Attendance By Month
+      .addCase(getAttendanceByMonth.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getAttendanceByMonth.fulfilled, (state, action) => {
+        const data = action.payload.attendances;
+        state.attendances = data;
+        state.loading = false;
+      })
+      .addCase(getAttendanceByMonth.rejected, (state) => {
+        state.loading = false;
+      })
+      // Get Student Attendance Stats By Month
+      .addCase(getAttendanceStatsByMonth.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getAttendanceStatsByMonth.fulfilled, (state, action) => {
+        const data = action.payload.stats;
+        state.stats = data;
+        state.loading = false;
+      })
+      .addCase(getAttendanceStatsByMonth.rejected, (state) => {
         state.loading = false;
       })
       // RESET STATE

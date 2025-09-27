@@ -4,7 +4,6 @@ import {
   getTeacherClass,
   getTeacherTimeTable,
   loginTeacher,
-  loginToken,
   sendOtp
 } from "../actions/teacherAction";
 
@@ -51,19 +50,6 @@ const teacherSlice = createSlice({
       .addCase(loginTeacher.rejected, (state) => {
         state.loading = false;
       })
-
-      // Login Teacher With Token
-      .addCase(loginToken.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(loginToken.fulfilled, (state, action) => {
-        state.loading = false;
-        state.teacher = action.payload.user;
-      })
-      .addCase(loginToken.rejected, (state) => {
-        state.loading = false;
-      })
-
       // Get Timetable for Teacher
       .addCase(getTeacherTimeTable.pending, (state) => {
         state.loading = true;

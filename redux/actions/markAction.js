@@ -16,6 +16,47 @@ export const getAllExams = createAsyncThunk(
   }
 );
 
+export const getStudentExams = createAsyncThunk(
+  "exam/student",
+  async ({ examId }, { rejectWithValue }) => {
+    try {
+      let params = {
+        examId,
+      };
+      const resp = await Axios.get("/exam/student", {
+        params,
+      });
+
+      console.log(resp.data);
+
+      return resp.data;
+    } catch (error) {
+      console.log(error.response);
+      // Use rejectWithValue to pass error messages to the reducer
+      if (error.response && error.response.data) {
+        return rejectWithValue(error.response.data.message);
+      } else {
+        return rejectWithValue(error.message);
+      }
+    }
+  }
+);
+
+export const getAllGrades = createAsyncThunk(
+  "marks/getAllGrades",
+  async (_, thunkAPI) => {
+    try {
+      const resp = await Axios.get("grades/all");
+      return resp.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
+
 // Add marks for students
 export const addClassMarks = createAsyncThunk(
   "marks/addClassMarks",

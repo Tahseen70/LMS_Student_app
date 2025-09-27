@@ -64,18 +64,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  loaderOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.3)", // semi-transparent
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 100,
-    elevation: 5, // for Android
-  },
 });
 
 export default styles;

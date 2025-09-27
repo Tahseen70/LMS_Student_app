@@ -1,162 +1,129 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import ShimmerPlaceholder from "react-native-shimmer-placeholder";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
 import SkeletonLoader from "../../components/SkeletonLoader";
 import { hexToRgba } from "../../config";
-import { DeleteTeacherNote, getNotes } from "../../redux/actions/noteAction";
-import { setNote, setViewNotes } from "../../redux/slices/noteSlice";
+import { getNotes } from "../../redux/actions/noteAction";
+import { getSubjects } from "../../redux/actions/subjectAction";
+import { resetNotes } from "../../redux/slices/noteSlice";
+import { setSubject } from "../../redux/slices/subjectSlice";
 import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
 import HeaderStyles from "../../styles/HeaderStyles";
 
 export default function NotesScreen() {
-  const router = useRouter();
   const dispatch = useDispatch();
   const Note = useSelector((state) => state.Note);
-  const {
-    viewNotes,
-    loading,
-    allNotes = [],
-    notesPage = 1,
-    notesHasMore = false,
-  } = Note;
-  const { selectedClass, selectedSubject, selectedNote } = viewNotes;
-  const [isOptionsVisible, setIsOptionsVisible] = useState(false);
-  const [isEditVisible, setIsEditVisible] = useState(false);
-  const [newName, setNewName] = useState("");
+  const { loading, allNotes = [], notesPage = 1, notesHasMore = false } = Note;
+
+  const Subject = useSelector((state) => state.Subject);
+  const { subjects, selectedSubject } = Subject;
+  const subjectLoading = Subject.loading;
+
   const [modalVisible, setModalVisible] = useState(false); // ✅ success modal state
 
   const handleLoadMore = () => {
-    if (!loading && notesHasMore) {
-      const classId = selectedClass._id;
-      const subject = selectedSubject._id;
-      dispatch(getNotes({ page: notesPage + 1, limit: 10, classId, subject }));
-    }
-  };
-
-  const handleOptions = (note) => {
+    if (loading || !notesHasMore || !selectedSubject?._id) return;
     dispatch(
-      setViewNotes({
-        name: "selectedNote",
-        value: note,
+      getNotes({
+        subjectId: selectedSubject._id,
+        page: notesPage + 1,
+        limit: 10,
       })
     );
-    setIsOptionsVisible(true);
   };
 
-  const handleDownload = async () => {
-    setIsOptionsVisible(false);
-    if (!selectedNote || !selectedNote.noteUrl) {
+  const handleDownload = async (item) => {
+    if (!item || !item.noteUrl) {
+      Alert.alert("Error", "File URL not found.");
       return;
     }
 
     try {
-      const fileUri = selectedNote.noteUrl;
-      let name = selectedNote.name || "file";
-
-      // Handle MIME type → extension
+      let name = item.name || "file";
       let ext = "pdf";
 
-      if (selectedNote.noteType) {
-        if (selectedNote.noteType.includes("/")) {
+      if (item.noteType) {
+        if (item.noteType.includes("/")) {
           const mimeToExt = {
             "application/pdf": "pdf",
             "image/jpeg": "jpg",
             "image/png": "png",
             "text/plain": "txt",
           };
-          ext = mimeToExt[selectedNote.noteType] || "bin";
+          ext = mimeToExt[item.noteType] || "bin";
         } else {
-          ext = selectedNote.noteType;
+          ext = item.noteType;
         }
       }
 
-      // sanitize name
-      name = name.replace(/[/\\?%*:|"<>.]/g, "_").trim();
-      name = name.replace(/\s+/g, "_");
+      // sanitize filename
+      name = name
+        .replace(/[/\\?%*:|"<>.]/g, "_")
+        .trim()
+        .replace(/\s+/g, "_");
 
-      // temp path inside cache
       const localUri = FileSystem.cacheDirectory + `${name}.${ext}`;
 
-      // download into cache
-      const { uri } = await FileSystem.downloadAsync(fileUri, localUri);
+      // download file
+      const { uri } = await FileSystem.downloadAsync(item.noteUrl, localUri);
 
-      // ask permission
+      // request permissions
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission required",
-          "Storage permission is needed to save files."
-        );
+        Alert.alert("Permission required", "Storage permission is needed.");
         return;
       }
 
-      // save to system downloads/photos
-      const asset = await MediaLibrary.createAssetAsync(uri);
-      await MediaLibrary.createAlbumAsync("Download", asset, false);
+      // save to library
+      await MediaLibrary.saveToLibraryAsync(uri);
 
-      Alert.alert("Success ✅", "File saved to your Downloads folder!");
+      Alert.alert("Success ✅", "File saved to your gallery/downloads.");
     } catch (error) {
       console.error("Error downloading file:", error);
       Alert.alert("Error ❌", "Could not download file.");
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedNote) return;
-    const noteId = selectedNote._id;
-    const noteResult = await dispatch(DeleteTeacherNote({ noteId }));
-    if (DeleteTeacherNote.fulfilled.match(noteResult)) {
-      dispatch(
-        setNote({
-          name: "allNotes",
-          value: [],
-        })
-      );
-      const classId = selectedClass._id;
-      const subject = selectedSubject._id;
-      await dispatch(getNotes({ classId, subject, page: 1, limit: 10 }));
-    }
-    setIsOptionsVisible(false);
-    dispatch(
-      setViewNotes({
-        name: "selectedNote",
-        value: null,
-      })
-    );
-  };
-
-  const handleEdit = () => {
-    if (!selectedNote) return;
-    const noteId = selectedNote._id;
-    const name = selectedNote.name;
-    const fileName = `${selectedNote.name} (${selectedNote.noteType})`;
-
-    dispatch(
-      setNote({
-        name: "updateNote",
-        value: { noteId, name, note: null, fileName },
-      })
-    );
-    router.push("/teacher/updateNote");
-    setIsOptionsVisible(false);
-    setIsEditVisible(true);
-  };
+  useEffect(() => {
+    (async () => {
+      try {
+        // if you use createAsyncThunk in RTK:
+        const data = await dispatch(getSubjects()).unwrap();
+        // now 'data' is exactly what you returned in your thunk
+        console.log("Subjects:", data);
+        const subjects = data?.subjects || [];
+        if (subjects.length > 0) {
+          const firstSubject = subjects[0];
+          dispatch(
+            setSubject({ name: "selectedSubject", value: firstSubject })
+          );
+          const subjectId = firstSubject._id;
+          dispatch(getNotes({ subjectId, page: 1, limit: 10 }));
+        }
+        // you can also set it in local state:
+        // setSubjects(data);
+      } catch (err) {
+        console.error("Failed to load subjects", err);
+      }
+    })();
+  }, [dispatch]);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.itemCard}>
@@ -173,15 +140,15 @@ export default function NotesScreen() {
         <Text style={styles.itemName}>{item?.name || "Unnamed"}</Text>
       </View>
       <TouchableOpacity
-        onPress={() => handleOptions(item)}
+        onPress={() => handleDownload(item)}
         style={{
           backgroundColor: Colors.primary,
           color: Colors.tertiary,
           padding: 8,
-          borderRadius: 20,
+          borderRadius: 5,
         }}
       >
-        <Ionicons name="ellipsis-vertical" size={20} color={Colors.tertiary} />
+        <Ionicons name="download-outline" size={20} color={Colors.tertiary} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -189,59 +156,74 @@ export default function NotesScreen() {
   const renderFooter = () =>
     loading ? <ActivityIndicator style={{ margin: 10 }} /> : null;
 
+  const onSubjectChange = (value) => {
+    dispatch(resetNotes());
+    dispatch(setSubject({ name: "selectedSubject", value }));
+    const subjectId = value._id;
+    dispatch(getNotes({ subjectId, page: 1, limit: 10 }));
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <PageHeader text="Notes" />
-      {/* List */}
+      {subjectLoading ? (
+        <View style={styles.monthBar}>
+          {[...Array(5)].map((_, index) => (
+            <ShimmerPlaceholder style={styles.loaderItem} key={index} />
+          ))}
+        </View>
+      ) : (
+        <View style={styles.monthBar}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.monthScroll}
+          >
+            {subjects.map((subject, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={[
+                  styles.monthBtn,
+                  selectedSubject?._id === subject?._id &&
+                    styles.monthBtnActive,
+                ]}
+                onPress={() => {
+                  onSubjectChange(subject);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.monthText,
+                    selectedSubject?._id === subject?._id &&
+                      styles.monthTextActive,
+                  ]}
+                >
+                  {subject.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
+      {/* List */}
       <FlatList
-        data={Array.isArray(allNotes) ? [] : []}
-        keyExtractor={(item, index) => `${item._id || "note"}-${index}`}
+        data={Array.isArray(allNotes) ? allNotes : []}
+        keyExtractor={(item, index) => `${item?._id || "note"}-${index}`}
         renderItem={renderItem}
         contentContainerStyle={styles.listContainer}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
+        onEndReached={allNotes.length > 0 ? handleLoadMore : null}
+        onEndReachedThreshold={0.1}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={
-          true ? (
+          loading ? (
             <SkeletonLoader number={7} />
           ) : (
             <ListEmpty text={"Notes Not Found"} />
           )
         }
       />
-
-     
-
-      {/* Options Modal */}
-      <Modal
-        transparent
-        visible={isOptionsVisible}
-        animationType="fade"
-        onRequestClose={() => setIsOptionsVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          onPress={() => setIsOptionsVisible(false)}
-          activeOpacity={1}
-        >
-          <View style={styles.optionsModal}>
-            <TouchableOpacity onPress={handleEdit} style={styles.modalButton}>
-              <Text style={styles.modalText}>Edit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleDelete} style={styles.modalButton}>
-              <Text style={[styles.modalText, { color: "red" }]}>Delete</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleDownload}
-              style={{ ...styles.modalButton, borderBottomWidth: 0 }}
-            >
-              <Text style={[styles.modalText, { color: "red" }]}>Download</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
 
       {/* ✅ Success Modal */}
       <Modal
@@ -273,6 +255,42 @@ export default function NotesScreen() {
 const styles = StyleSheet.create({
   ...ContainerStyles,
   ...HeaderStyles,
+  monthBar: {
+    marginTop: 8,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+  },
+  loaderItem: {
+    borderRadius: 20,
+    marginLeft: 8,
+    width: 70,
+    height: 30,
+  },
+  monthScroll: {
+    paddingHorizontal: 10,
+  },
+  monthBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: "#f2f2f2",
+    marginRight: 8,
+  },
+  monthBtnActive: {
+    backgroundColor: Colors.primary,
+  },
+  monthText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  monthTextActive: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
   listContainer: { padding: 16 },
   itemCard: {
     flexDirection: "row",
