@@ -156,8 +156,7 @@ const LoginScreen = () => {
   };
 
   const onCloseClick = async () => {
-    await AsyncStorage.removeItem("school");
-    await AsyncStorage.removeItem("token");
+    await AsyncStorage.clear();
     router.replace("/auth/splash");
   };
 
@@ -172,7 +171,7 @@ const LoginScreen = () => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.container}>
-          <Loader loading={loading} />
+          <Loader loading={true} />
 
           <View style={styles.header}>
             <View style={styles.logoWrapper}>

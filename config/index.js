@@ -1,28 +1,76 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { decode, encode } from "base-64";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import moment from "moment";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 // Polyfill first
+
 if (!global.btoa) {
   global.btoa = encode;
 }
-
 if (!global.atob) {
   global.atob = decode;
 }
 
-// // then later, when you need jsPDF:
-// let jsPDF; // will hold the module
+// now it's safe to import jsPDF
+import { jsPDF } from "jspdf";
 
-// async function getJsPDF() {
-//   if (!jsPDF) {
-//     const module = await import("jspdf");
-//     jsPDF = module; // or module.default.jsPDF depending on version
-//   }
-//   return jsPDF;
-// }
+const getBaseUri = async () => {
+  let baseUri = await AsyncStorage.getItem("baseUri");
+  if (baseUri) return baseUri;
+
+  // Ask user for DCIM folder once
+  const defaultDirectoryUri =
+    await FileSystem.StorageAccessFramework.getUriForDirectoryInRoot("DCIM");
+
+  const perms =
+    await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(
+      defaultDirectoryUri
+    );
+  if (!perms.granted) throw new Error("Permission denied");
+
+  // Create or get /Grader under DCIM
+  const graderUri = await ensureSubfolder(perms.directoryUri, "Grader");
+
+  await AsyncStorage.setItem("baseUri", graderUri);
+  return graderUri;
+};
+
+const ensureSubfolder = async (parentUri, folderName) => {
+  // List children of parentUri
+  const children = await FileSystem.StorageAccessFramework.readDirectoryAsync(
+    parentUri
+  );
+
+  // Look for a child whose decoded name matches folderName
+  const match = children.find((uri) => {
+    // last segment after %2F
+    const name = decodeURIComponent(uri.split("%2F").pop());
+    return name === folderName;
+  });
+
+  if (match) {
+    // Already exists → return its URI
+    return match;
+  }
+
+  // Else create new
+  return await FileSystem.StorageAccessFramework.makeDirectoryAsync(
+    parentUri,
+    folderName
+  );
+};
+
+const getGraderFolderUri = async (folders = []) => {
+  let currentUri = await getBaseUri();
+
+  for (const folder of folders) {
+    currentUri = await ensureSubfolder(currentUri, folder);
+  }
+  return currentUri;
+};
 
 const formatCNIC = (str = "") => {
   let cnic = str.toString().replace(/\D/g, "");
@@ -47,99 +95,6 @@ const formatNumber = (num) => {
   if (num === null || num === undefined || num === "") return;
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
-
-const BASE_URL = "https://764c3240b4a0.ngrok-free.app/api";
-
-// async function generateChallan(fee, bank, campusStr) {
-//   try {
-//     const { status } = await MediaLibrary.requestPermissionsAsync();
-//     if (status !== "granted") {
-//       Alert.alert(
-//         "Permission required",
-//         "Please allow access to media library"
-//       );
-//       return;
-//     }
-
-//     const campus = JSON.parse(campusStr);
-//     const schoolName = campus.school.name;
-//     const campusName = campus.name;
-
-//     // create one page
-//     const pdfDoc = await PDFDocument.create();
-//     const page = pdfDoc.addPage([842, 595]); // A4 landscape in points
-//     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-//     const pageWidth = page.getWidth();
-//     const pageHeight = page.getHeight();
-//     const margin = 20;
-//     const sectionWidth = (pageWidth - margin * 2) / 3;
-//     const sectionHeight = pageHeight - margin * 2;
-
-//     const drawChallan = (xOffset, title) => {
-//       const draw = (text, x, y, size = 10, bold = false) => {
-//         page.drawText(text, {
-//           x,
-//           y,
-//           size,
-//           font,
-//           color: rgb(0, 0, 0),
-//         });
-//       };
-
-//       // Outer border
-//       page.drawRectangle({
-//         x: xOffset,
-//         y: margin,
-//         width: sectionWidth,
-//         height: sectionHeight,
-//         borderColor: rgb(0, 0, 0),
-//         borderWidth: 1,
-//       });
-
-//       // Title (Bank Copy / Office Copy / Student Copy)
-//       draw(title, xOffset + sectionWidth / 2 - 30, pageHeight - 40, 12);
-
-//       // Example content
-//       draw(`${schoolName}`, xOffset + 10, pageHeight - 60, 10);
-//       draw(`${campusName}`, xOffset + 10, pageHeight - 75, 9);
-//       draw(`Student: ${fee.student.name}`, xOffset + 10, pageHeight - 100, 9);
-//       draw(
-//         `Father: ${fee.student.fatherName}`,
-//         xOffset + 10,
-//         pageHeight - 115,
-//         9
-//       );
-//       draw(`Class: ${fee.class.name}`, xOffset + 10, pageHeight - 130, 9);
-//       draw(`Fee: ${fee.amount}`, xOffset + 10, pageHeight - 160, 9);
-//       draw(
-//         `Total: ${fee.amount + fee.lmsFee}`,
-//         xOffset + 10,
-//         pageHeight - 175,
-//         10
-//       );
-//     };
-
-//     drawChallan(margin, "Bank Copy");
-//     drawChallan(margin + sectionWidth, "Office Copy");
-//     drawChallan(margin + sectionWidth * 2, "Student Copy");
-
-//     // save base64
-//     const base64 = await pdfDoc.saveAsBase64();
-//     const fileUri = `${FileSystem.cacheDirectory}challan_${Date.now()}.pdf`;
-
-//     await FileSystem.writeAsStringAsync(fileUri, base64, {
-//       encoding: FileSystem.EncodingType.Base64,
-//     });
-
-//     await MediaLibrary.saveToLibraryAsync(fileUri);
-//     Alert.alert("✅ PDF Created", "Challan PDF saved to gallery.");
-//     return fileUri;
-//   } catch (err) {
-//     console.error("Challan PDF Error:", err);
-//     Alert.alert("❌ Error", "Failed to generate challan");
-//   }
-// }
 
 async function createDummyPDF() {
   try {
@@ -177,7 +132,7 @@ async function createDummyPDF() {
   }
 }
 
-async function getImageBase64(url) {
+const getImageBase64 = async (url) => {
   // download to a temp file
   const fileUri = FileSystem.cacheDirectory + `logo_${Date.now()}.png`;
   const downloadResumable = FileSystem.createDownloadResumable(url, fileUri);
@@ -188,12 +143,13 @@ async function getImageBase64(url) {
     encoding: FileSystem.EncodingType.Base64,
   });
   return base64; // only the base64 data, no data:image/png prefix
-}
+};
 
 const generateChallan = async (fee, bank, campusStr) => {
   try {
-    const module = await import("jspdf");
-    const jsPDF = module.jsPDF;
+    // const module = await import("jspdf");
+    // const jsPDF = module.jsPDF;
+    // console.log(jsPDF);
     // Objects
     const student = fee.student;
     const studentClass = fee.class;
@@ -500,29 +456,46 @@ const generateChallan = async (fee, bank, campusStr) => {
     /** ⬇️ instead of blob, get base64 */
     const pdfBase64 = doc.output("datauristring").split(",")[1];
 
-    // make sure we have write permission first
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission required", "We need access to save the PDF.");
-      return;
-    }
-
-    // write the base64 string to a temp file
-    const fileUri = FileSystem.cacheDirectory + `challan_${Date.now()}.pdf`;
-    await FileSystem.writeAsStringAsync(fileUri, pdfBase64, {
+    // put into a temp file first
+    const tmpFileUri = FileSystem.cacheDirectory + `challan_${Date.now()}.pdf`;
+    await FileSystem.writeAsStringAsync(tmpFileUri, pdfBase64, {
       encoding: FileSystem.EncodingType.Base64,
     });
 
-    // save into the user’s downloads / gallery
-    const asset = await MediaLibrary.createAssetAsync(fileUri);
-    await MediaLibrary.createAlbumAsync("Download", asset, false);
+    const filename = `${formattedMonth}.pdf`;
 
-    Alert.alert("Saved", "PDF has been saved to your Downloads/Gallery");
-    return fileUri; // you also get the file path if you want to share
+    if (Platform.OS === "android") {
+      // ask for the Grader folder like before
+      const graderUri = await getGraderFolderUri(["Challans"]);
+
+      // create an empty PDF file there
+      const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
+        graderUri,
+        filename,
+        "application/pdf"
+      );
+
+      // read temp file back into base64
+      const base64 = await FileSystem.readAsStringAsync(tmpFileUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // write base64 into SAF file
+      await FileSystem.writeAsStringAsync(newUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      Alert.alert("Success ✅", "PDF saved to Grader folder");
+    } else {
+      // iOS can still use MediaLibrary or Share API
+      // …
+    }
   } catch (error) {
     console.log(error);
   }
 };
+
+const BASE_URL = "https://d8a8f1f2ce28.ngrok-free.app/api";
 
 export {
   BASE_URL,
@@ -530,6 +503,7 @@ export {
   formatCNIC,
   formatNumber,
   generateChallan,
+  getGraderFolderUri,
   hexToRgba
 };
 

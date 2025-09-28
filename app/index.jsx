@@ -1,4 +1,5 @@
 // app/index.js
+// Load PollyFills for JSPDF
 import { decode, encode } from "base-64";
 
 if (!global.btoa) {

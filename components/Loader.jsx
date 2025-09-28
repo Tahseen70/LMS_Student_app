@@ -1,13 +1,19 @@
 import React from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import Colors from "../styles/Colors";
+import { StyleSheet, View } from "react-native";
+import LoaderKit from "react-native-loader-kit";
 
 const Loader = ({ loading }) => {
   if (!loading) return null;
 
   return (
     <View style={styles.loaderOverlay}>
-      <ActivityIndicator size="large" color={Colors.primary} />
+      {/* <ActivityIndicator size="large" color={Colors.primary} /> */}
+      <LoaderKit
+        style={{ width: 50, height: 50 }}
+        name={"BallPulse"} // Optional: see list of animations below
+        size={50} // Required on iOS
+        color={"red"} // Optional: color can be: 'red', 'green',... or '#ddd', '#ffffff',...
+      />
     </View>
   );
 };

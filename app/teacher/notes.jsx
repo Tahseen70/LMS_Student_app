@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
-import * as MediaLibrary from "expo-media-library";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,12 +16,13 @@ import {
 import ShimmerPlaceholder from "react-native-shimmer-placeholder";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
+import Loader from "../../components/Loader";
 import PageHeader from "../../components/PageHeader";
 import SkeletonLoader from "../../components/SkeletonLoader";
-import { hexToRgba } from "../../config";
+import { getGraderFolderUri, hexToRgba } from "../../config";
 import { getNotes } from "../../redux/actions/noteAction";
 import { getSubjects } from "../../redux/actions/subjectAction";
-import { resetNotes } from "../../redux/slices/noteSlice";
+import { resetNotes, setNote } from "../../redux/slices/noteSlice";
 import { setSubject } from "../../redux/slices/subjectSlice";
 import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
@@ -49,16 +50,17 @@ export default function NotesScreen() {
     );
   };
 
-  const handleDownload = async (item) => {
-    if (!item || !item.noteUrl) {
-      Alert.alert("Error", "File URL not found.");
-      return;
-    }
-
+  const handleDownload = async (item, subject) => {
+    dispatch(setNote({ name: "loading", value: true }));
     try {
+      if (!item || !item.noteUrl) {
+        Alert.alert("Error", "File URL not found.");
+        return;
+      }
+
+      // file name & extension
       let name = item.name || "file";
       let ext = "pdf";
-
       if (item.noteType) {
         if (item.noteType.includes("/")) {
           const mimeToExt = {
@@ -73,37 +75,52 @@ export default function NotesScreen() {
         }
       }
 
-      // sanitize filename
       name = name
         .replace(/[/\\?%*:|"<>.]/g, "_")
         .trim()
         .replace(/\s+/g, "_");
+      const filename = `${name}.${ext}`;
+      const localUri = FileSystem.cacheDirectory + filename;
 
-      const localUri = FileSystem.cacheDirectory + `${name}.${ext}`;
-
-      // download file
+      // Get Subject Info
+      const subjectName = subject.name;
+      // download into cache
       const { uri } = await FileSystem.downloadAsync(item.noteUrl, localUri);
 
-      // request permissions
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission required", "Storage permission is needed.");
-        return;
+      if (Platform.OS === "android") {
+        // get/create Grader folder URI
+        const graderUri = await getGraderFolderUri(["Notes", subjectName]);
+
+        // create file in Grader folder
+        const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
+          graderUri,
+          filename,
+          item.noteType || "application/pdf"
+        );
+
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        await FileSystem.writeAsStringAsync(newUri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        Alert.alert("Success ✅", "File saved to Grader folder");
+      } else {
+        // handle iOS case separately if needed
       }
-
-      // save to library
-      await MediaLibrary.saveToLibraryAsync(uri);
-
-      Alert.alert("Success ✅", "File saved to your gallery/downloads.");
     } catch (error) {
-      console.error("Error downloading file:", error);
-      Alert.alert("Error ❌", "Could not download file.");
+      console.error("Android save error:", error);
+      Alert.alert("Error ❌", "Could not save to Downloads folder.");
     }
+    dispatch(setNote({ name: "loading", value: false }));
   };
 
   useEffect(() => {
     (async () => {
       try {
+        dispatch(resetNotes());
         // if you use createAsyncThunk in RTK:
         const data = await dispatch(getSubjects()).unwrap();
         // now 'data' is exactly what you returned in your thunk
@@ -140,7 +157,7 @@ export default function NotesScreen() {
         <Text style={styles.itemName}>{item?.name || "Unnamed"}</Text>
       </View>
       <TouchableOpacity
-        onPress={() => handleDownload(item)}
+        onPress={() => handleDownload(item, selectedSubject)}
         style={{
           backgroundColor: Colors.primary,
           color: Colors.tertiary,
@@ -167,6 +184,7 @@ export default function NotesScreen() {
     <View style={styles.container}>
       {/* Header */}
       <PageHeader text="Notes" />
+      <Loader loading={loading} />
       {subjectLoading ? (
         <View style={styles.monthBar}>
           {[...Array(5)].map((_, index) => (
@@ -390,3 +408,38 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 });
+
+// Check if file is a media type (image/video) or document
+// const isMediaFile =
+//   item.noteType &&
+//   (item.noteType.startsWith("image/") ||
+//     item.noteType.startsWith("video/"));
+
+// if (isMediaFile) {
+//   // Handle media files (images/videos) - save to gallery
+//   const { status } = await MediaLibrary.requestPermissionsAsync();
+//   if (status !== "granted") {
+//     Alert.alert(
+//       "Permission required",
+//       "Storage permission is needed to save media files."
+//     );
+//     return;
+//   }
+
+//   const asset = await MediaLibrary.createAssetAsync(uri);
+//   await MediaLibrary.createAlbumAsync("Download", asset, false);
+//   Alert.alert("Success ✅", "Media file saved to your gallery.");
+// } else {
+//   // Handle documents (PDF, txt, etc.) - use Sharing API
+//   // if (await Sharing.isAvailableAsync()) {
+//   //   await Sharing.shareAsync(uri, {
+//   //     mimeType: item.noteType || "application/pdf",
+//   //     dialogTitle: `Save ${filename}`,
+//   //     UTI: "public.data",
+//   //   });
+//   // } else {
+//   // Fallback: Save to app's document directory
+//   // const documentUri = FileSystem.documentDirectory + filename;
+//   // await FileSystem.copyAsync({ from: uri, to: documentUri });
+
+// }

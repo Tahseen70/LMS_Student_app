@@ -50,6 +50,8 @@ const noteSlice = createSlice({
     resetNotes(state, action) {
       state.notes = initialState.notes;
       state.allNotes = initialState.allNotes;
+      state.notesPage = initialState.notesPage;
+      state.notesHasMore = initialState.notesHasMore;
     },
   },
   extraReducers: (builder) => {
