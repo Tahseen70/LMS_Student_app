@@ -1,4 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Asset } from "expo-asset";
+import * as Font from "expo-font";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -12,7 +15,7 @@ import {
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useDispatch, useSelector } from "react-redux";
-import { hexToRgba } from "../../config";
+import { assetImages, hexToRgba } from "../../config";
 import {
   getAllcampuses,
   getAllschools, // ✅ FIX: added import
@@ -58,6 +61,8 @@ export default function OnboardingScreen() {
   useEffect(() => {
     (async () => {
       await dispatch(getAllschools());
+      await Asset.loadAsync(assetImages);
+      await Font.loadAsync(Ionicons.font);
       Animated.parallel([
         Animated.timing(heightAnim, {
           toValue: screenHeight * 0.35,
@@ -75,7 +80,7 @@ export default function OnboardingScreen() {
 
   const onSchoolChange = async (school) => {
     dispatch(setSchool({ name: "selectedSchool", value: school }));
-
+    dispatch(setSchool({ name: "selectedCampus", value: null }));
     await dispatch(getAllcampuses({ school: school._id }));
   };
 
@@ -238,7 +243,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: "center",
     marginTop: 10,
-    width: "60%",
+    width: "100%",
   },
   buttonText: {
     color: Colors.tertiary,

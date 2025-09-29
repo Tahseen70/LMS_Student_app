@@ -1,6 +1,5 @@
 import { router } from "expo-router";
 import {
-  ActivityIndicator,
   Image,
   StyleSheet,
   Text,
@@ -42,7 +41,6 @@ export default function ResetPasswordScreen() {
           style={styles.otpImage}
           resizeMode="contain"
         />
-
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -52,18 +50,9 @@ export default function ResetPasswordScreen() {
           autoCapitalize="none"
         />
 
-        {loading ? (
-          <View style={styles.loader}>
-            <Text style={{ marginTop: 10, fontSize: 16, marginRight: 20 }}>
-              Loading...
-            </Text>
-            <ActivityIndicator size="large" color={Colors.primary} />
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-            <Text style={styles.resetButtonText}>Continue</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+          <Text style={styles.resetButtonText}>Continue</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

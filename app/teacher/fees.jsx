@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
-import Loader from "../../components/Loader";
 import PageHeader from "../../components/PageHeader";
 import { formatNumber, generateChallan } from "../../config";
 import { getBank } from "../../redux/actions/schoolAction";
@@ -123,7 +122,6 @@ const FeeScreen = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* Header */}
       <PageHeader text="Fees" />
-      <Loader loading={loading} />
       {/* Month Toggles */}
       <View style={styles.monthBar}>
         <ScrollView
@@ -168,9 +166,7 @@ const FeeScreen = () => {
       </View>
 
       {/* Fee Box */}
-      {loading ? (
-        <Loader loading={loading} />
-      ) : fee ? (
+      {fee ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Fee</Text>
 

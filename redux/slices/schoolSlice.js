@@ -26,15 +26,10 @@ const schoolSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // GET ALL SCHOOLS
-      .addCase(getAllschools.pending, (state) => {
-        state.loading = true;
-      })
+
       .addCase(getAllschools.fulfilled, (state, action) => {
         state.loading = false;
         state.schools = action.payload.schools;
-      })
-      .addCase(getAllschools.rejected, (state) => {
-        state.loading = false;
       })
 
       // GET ALL Campus
@@ -42,8 +37,8 @@ const schoolSlice = createSlice({
         state.loading = true;
       })
       .addCase(getAllcampuses.fulfilled, (state, action) => {
-        state.loading = false;
         state.campuses = action.payload.campuses;
+        state.loading = false;
       })
       .addCase(getAllcampuses.rejected, (state) => {
         state.loading = false;

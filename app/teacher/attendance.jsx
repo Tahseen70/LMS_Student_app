@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
-import Loader from "../../components/Loader";
 import PageHeader from "../../components/PageHeader";
 import {
   getAttendanceByMonth,
@@ -90,7 +89,6 @@ const StudentAttendanceScreen = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* Header */}
       <PageHeader text="Attendance" />
-      <Loader loading={loading} />
       {/* Month Toggle */}
       <View style={styles.monthBar}>
         <ScrollView

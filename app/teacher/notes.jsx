@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
@@ -16,7 +15,6 @@ import {
 import ShimmerPlaceholder from "react-native-shimmer-placeholder";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
-import Loader from "../../components/Loader";
 import PageHeader from "../../components/PageHeader";
 import SkeletonLoader from "../../components/SkeletonLoader";
 import { getGraderFolderUri, hexToRgba } from "../../config";
@@ -170,9 +168,6 @@ export default function NotesScreen() {
     </TouchableOpacity>
   );
 
-  const renderFooter = () =>
-    loading ? <ActivityIndicator style={{ margin: 10 }} /> : null;
-
   const onSubjectChange = (value) => {
     dispatch(resetNotes());
     dispatch(setSubject({ name: "selectedSubject", value }));
@@ -184,7 +179,6 @@ export default function NotesScreen() {
     <View style={styles.container}>
       {/* Header */}
       <PageHeader text="Notes" />
-      <Loader loading={loading} />
       {subjectLoading ? (
         <View style={styles.monthBar}>
           {[...Array(5)].map((_, index) => (
@@ -233,7 +227,6 @@ export default function NotesScreen() {
         contentContainerStyle={styles.listContainer}
         onEndReached={allNotes.length > 0 ? handleLoadMore : null}
         onEndReachedThreshold={0.1}
-        ListFooterComponent={renderFooter}
         ListEmptyComponent={
           loading ? (
             <SkeletonLoader number={7} />

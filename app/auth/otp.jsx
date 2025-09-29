@@ -2,14 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Image,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import PageHeader from "../../components/PageHeader";
@@ -159,18 +158,10 @@ const ResetPasswordScreen = () => {
         )}
 
         {/* Loader / Button */}
-        {loading ? (
-          <View style={styles.loader}>
-            <Text style={{ marginTop: 10, fontSize: 16, marginRight: 20 }}>
-              Loading...
-            </Text>
-            <ActivityIndicator size="large" color={Colors.primary} />
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.resetButton} onPress={handleSubmit}>
-            <Text style={styles.resetButtonText}>Submit</Text>
-          </TouchableOpacity>
-        )}
+
+        <TouchableOpacity style={styles.resetButton} onPress={handleSubmit}>
+          <Text style={styles.resetButtonText}>Submit</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

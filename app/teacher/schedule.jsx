@@ -60,9 +60,11 @@ const TeacherScheduleScreen = () => {
             };
           } else {
             // Scheduled period
+            const teacher = periodData?.teacher || {};
+            const subject = periodData?.subject || {};
             result[capitalize(day)][i] = {
-              teacher: `${periodData.teacher.name}`,
-              subject: periodData.subject.name,
+              teacher: teacher?.name || "Free",
+              subject: subject?.name || "",
             };
           }
         }
@@ -101,56 +103,29 @@ const TeacherScheduleScreen = () => {
         {/* Header */}
         <PageHeader text="Weekly Schedule" />
 
-        <ScrollView
-          horizontal
-          nestedScrollEnabled
-          showsHorizontalScrollIndicator={false}
-        >
+        {hasTimetable ? (
           <ScrollView
+            horizontal
             nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 50 }}
+            showsHorizontalScrollIndicator={false}
           >
-            <View style={styles.table}>
-              {/* Header Row */}
-              <View style={styles.row}>
-                <View style={styles.timeCell}>
-                  <Text style={styles.headerText}>Day</Text>
-                </View>
-                {Array.from({ length: numClasses }).map((_, i) => (
-                  <React.Fragment key={i}>
-                    <View style={styles.headerCell}>
-                      <Text style={styles.headerText}>Period {i + 1}</Text>
-                    </View>
-                    {/* Break column header after 4th period */}
-                    {i + 1 === 4 && (
-                      <View style={styles.breakCell}>
-                        <Text style={styles.breakText}>BREAK</Text>
-                      </View>
-                    )}
-                  </React.Fragment>
-                ))}
-              </View>
-
-              {/* Day Rows */}
-              {days.map((day) => (
-                <View key={day} style={styles.row}>
+            <ScrollView
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 50 }}
+            >
+              <View style={styles.table}>
+                {/* Header Row */}
+                <View style={styles.row}>
                   <View style={styles.timeCell}>
-                    <Text style={styles.dayText}>{day}</Text>
+                    <Text style={styles.headerText}>Day</Text>
                   </View>
-                  {schedule[day].map((period, i) => (
+                  {Array.from({ length: numClasses }).map((_, i) => (
                     <React.Fragment key={i}>
-                      <View style={styles.cell}>
-                        <View style={{ alignItems: "center" }}>
-                          <Text style={styles.cellText}>{period.teacher}</Text>
-                          {period.subject ? (
-                            <Text style={styles.subjectText}>
-                              {period.subject}
-                            </Text>
-                          ) : null}
-                        </View>
+                      <View style={styles.headerCell}>
+                        <Text style={styles.headerText}>Period {i + 1}</Text>
                       </View>
-                      {/* Break column after 4th period */}
+                      {/* Break column header after 4th period */}
                       {i + 1 === 4 && (
                         <View style={styles.breakCell}>
                           <Text style={styles.breakText}>BREAK</Text>
@@ -159,10 +134,43 @@ const TeacherScheduleScreen = () => {
                     </React.Fragment>
                   ))}
                 </View>
-              ))}
-            </View>
+
+                {/* Day Rows */}
+                {days.map((day) => (
+                  <View key={day} style={styles.row}>
+                    <View style={styles.timeCell}>
+                      <Text style={styles.dayText}>{day}</Text>
+                    </View>
+                    {schedule[day].map((period, i) => (
+                      <React.Fragment key={i}>
+                        <View style={styles.cell}>
+                          <View style={{ alignItems: "center" }}>
+                            <Text style={styles.cellText}>
+                              {period.teacher}
+                            </Text>
+                            {period.subject ? (
+                              <Text style={styles.subjectText}>
+                                {period.subject}
+                              </Text>
+                            ) : null}
+                          </View>
+                        </View>
+                        {/* Break column after 4th period */}
+                        {i + 1 === 4 && (
+                          <View style={styles.breakCell}>
+                            <Text style={styles.breakText}>BREAK</Text>
+                          </View>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
           </ScrollView>
-        </ScrollView>
+        ) : (
+          <ListEmpty text={"Timetable Not Found"} />
+        )}
       </View>
     </SafeAreaView>
   );

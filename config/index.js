@@ -1,12 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { decode, encode } from "base-64";
+import Constants from "expo-constants";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import moment from "moment";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { Alert, Platform } from "react-native";
-// Polyfill first
+const APP_NAME = Constants.expoConfig?.name;
 
+// Polyfill first
 if (!global.btoa) {
   global.btoa = encode;
 }
@@ -32,7 +34,7 @@ const getBaseUri = async () => {
   if (!perms.granted) throw new Error("Permission denied");
 
   // Create or get /Grader under DCIM
-  const graderUri = await ensureSubfolder(perms.directoryUri, "Grader");
+  const graderUri = await ensureSubfolder(perms.directoryUri, APP_NAME);
 
   await AsyncStorage.setItem("baseUri", graderUri);
   return graderUri;
@@ -147,6 +149,12 @@ const getImageBase64 = async (url) => {
 
 const generateChallan = async (fee, bank, campusStr) => {
   try {
+    console.log("Fee=");
+    console.log(fee);
+    console.log("Bank=");
+    console.log(bank);
+    console.log("campusStr=");
+    console.log(campusStr);
     // const module = await import("jspdf");
     // const jsPDF = module.jsPDF;
     // console.log(jsPDF);
@@ -485,7 +493,7 @@ const generateChallan = async (fee, bank, campusStr) => {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      Alert.alert("Success ✅", "PDF saved to Grader folder");
+      Alert.alert("Success ✅", `PDF saved to ${APP_NAME} folder`);
     } else {
       // iOS can still use MediaLibrary or Share API
       // …
@@ -495,15 +503,34 @@ const generateChallan = async (fee, bank, campusStr) => {
   }
 };
 
-const BASE_URL = "https://d8a8f1f2ce28.ngrok-free.app/api";
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const assetImages = [
+  require("../assets/bg.png"),
+  require("../assets/email.png"),
+  require("../assets/lock.png"),
+  require("../assets/logo_round_white.png"),
+  require("../assets/Logo_White.png"),
+  require("../assets/logo.png"),
+  require("../assets/not_found.png"),
+  require("../assets/robot.png"),
+  require("../assets/user_female.png"),
+  require("../assets/user_male.png"),
+];
+
+const BASE_URL = "https://386946dd3eac.ngrok-free.app/api";
 
 export {
-  BASE_URL,
+  assetImages, BASE_URL,
   createDummyPDF,
   formatCNIC,
   formatNumber,
   generateChallan,
   getGraderFolderUri,
-  hexToRgba
+  hexToRgba,
+  isValidEmail
 };
 

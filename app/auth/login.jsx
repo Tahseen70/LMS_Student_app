@@ -7,6 +7,7 @@ import {
   Alert,
   Animated,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,8 +18,7 @@ import {
   View,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import Loader from "../../components/Loader";
-import { hexToRgba } from "../../config";
+import { hexToRgba, isValidEmail } from "../../config";
 import { loginStudent, loginToken } from "../../redux/actions/studentAction";
 import { setSchool } from "../../redux/slices/schoolSlice";
 import { setStudent } from "../../redux/slices/studentSlice";
@@ -84,8 +84,17 @@ const LoginScreen = () => {
   }, []);
 
   const handleLogin = async () => {
+    Keyboard.dismiss();
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Missing Credentials", "Please enter both ID and password.");
+      Alert.alert(
+        "Missing Credentials",
+        "Please enter both email and password."
+      );
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      Alert.alert("Invalid Email", "Please enter valid email");
       return;
     }
 
@@ -170,9 +179,12 @@ const LoginScreen = () => {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.container}>
-          <Loader loading={true} />
-
+        <View
+          style={{
+            ...styles.container,
+            height: "100%",
+          }}
+        >
           <View style={styles.header}>
             <View style={styles.logoWrapper}>
               <TouchableOpacity
