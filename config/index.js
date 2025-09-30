@@ -524,7 +524,8 @@ const assetImages = [
 const BASE_URL = "https://386946dd3eac.ngrok-free.app/api";
 
 export {
-  assetImages, BASE_URL,
+  assetImages,
+  BASE_URL,
   createDummyPDF,
   formatCNIC,
   formatNumber,

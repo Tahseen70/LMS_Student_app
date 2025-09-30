@@ -85,6 +85,7 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     Keyboard.dismiss();
+    
     if (!email.trim() || !password.trim()) {
       Alert.alert(
         "Missing Credentials",

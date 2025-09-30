@@ -1,4 +1,4 @@
-import { FontAwesome } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { BackHandler, Image } from "react-native";
 
@@ -23,19 +23,19 @@ const dashboardItems = [
   {
     id: "1",
     title: "Attendance",
-    icon: "calendar-check-o",
+    icon: "calendar-number-outline",
     route: "/teacher/attendance",
   },
   {
     id: "2",
     title: "Class Schedule",
-    icon: "calendar",
+    icon: "calendar-outline",
     route: "/teacher/schedule",
   },
   {
     id: "3",
     title: "Marks",
-    icon: "graduation-cap",
+    icon: "school-outline",
     route: "/teacher/marks",
   },
   {
@@ -98,7 +98,7 @@ const Home = () => {
       >
         {/* Inner container */}
         <View style={styles.innerContainer}>
-          <FontAwesome name={item.icon} size={32} color={Colors.tertiary} />
+          <Ionicons name={item.icon} size={32} color={Colors.tertiary} />
         </View>
 
         <Text style={styles.cardText}>{item.title}</Text>
