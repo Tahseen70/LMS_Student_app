@@ -9,7 +9,6 @@ export const getSubjects = createAsyncThunk(
       const resp = await Axios.get("/subject/student");
       return resp.data;
     } catch (error) {
-      console.log("errors in fetching subjects:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );

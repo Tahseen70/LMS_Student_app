@@ -15,7 +15,6 @@ export const loginTeacher = createAsyncThunk(
       await AsyncStorage.setItem("token", token);
       return resp.data;
     } catch (error) {
-      console.log("Login Error:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );
@@ -33,7 +32,6 @@ export const getTeacherTimeTable = createAsyncThunk(
       let resp = await Axios.get("/teacher/timeTable");
       return resp.data;
     } catch (error) {
-      console.log("Error fetching timetable:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );
@@ -68,7 +66,6 @@ export const sendOtp = createAsyncThunk(
       });
       return resp.data;
     } catch (error) {
-      console.log("Error adding note:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );
@@ -89,7 +86,6 @@ export const checkOtp = createAsyncThunk(
       });
       return resp.data;
     } catch (error) {
-      console.log("Error adding note:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );
@@ -111,7 +107,6 @@ export const changePassword = createAsyncThunk(
       });
       return resp.data;
     } catch (error) {
-      console.log("Error adding note:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );

@@ -47,9 +47,7 @@ const LoginScreen = () => {
         const token = await AsyncStorage.getItem("token");
         if (token) {
           const compatible = await LocalAuthentication.hasHardwareAsync();
-          console.log("compatible=", compatible);
           const enrolled = await LocalAuthentication.isEnrolledAsync();
-          console.log("enrolled=", enrolled);
           if (enrolled && compatible) {
             setHasBiometric(true);
             const types =
@@ -73,7 +71,7 @@ const LoginScreen = () => {
           }
         }
 
-        if (student) router.replace("/teacher/home");
+        if (student) router.replace("/student/home");
 
         const campus = await AsyncStorage.getItem("school");
 
@@ -142,7 +140,7 @@ const LoginScreen = () => {
 
     const resultAction = await dispatch(loginStudent({ email, password }));
     if (loginStudent.fulfilled.match(resultAction)) {
-      router.replace("/teacher/home");
+      router.replace("/student/home");
     }
     if (loginStudent.rejected.match(resultAction)) {
       Alert.alert("Error Occured", String(resultAction.payload));
@@ -174,7 +172,7 @@ const LoginScreen = () => {
       if (result.success) {
         const resultAction = await dispatch(loginToken());
         if (loginToken.fulfilled.match(resultAction)) {
-          router.replace("/teacher/home");
+          router.replace("/student/home");
         }
         if (loginToken.rejected.match(resultAction)) {
           Alert.alert("Error Occured", String(resultAction.payload));

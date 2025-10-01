@@ -9,9 +9,9 @@ export default {
   quaternary: "#000000",
   // Specific
   container: "#F0F2F5",
-  present: "#28A745",
-  absent: "#DC3545",
-  leave: "#007BFF",
+  green: "#28A745",
+  red: "#DC3545",
+  blue: "#007BFF",
   pending: "#6C757D",
   banner: "#FFC107",
 };

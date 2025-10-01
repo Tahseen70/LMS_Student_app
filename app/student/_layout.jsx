@@ -7,7 +7,7 @@ import Loader from "../../components/Loader";
 import { hexToRgba } from "../../config";
 import Colors from "../../styles/Colors";
 
-export default function TeacherLayout() {
+const TeacherLayout = () => {
   const Student = useSelector((state) => state.Student);
   const { student } = Student;
   const insets = useSafeAreaInsets();
@@ -95,4 +95,6 @@ export default function TeacherLayout() {
       </Tabs>
     </Fragment>
   );
-}
+};
+
+export default TeacherLayout;

@@ -108,22 +108,22 @@ const More = () => {
           items={[
             {
               label: "Profile",
-              route: "/teacher/profile",
+              route: "/student/profile",
               icon: "notifications-outline",
             },
             {
               label: "Notes",
-              route: "/teacher/notes",
+              route: "/student/notes",
               icon: "document-text-outline",
             },
             {
               label: "Class Schedule",
-              route: "/teacher/schedule",
+              route: "/student/schedule",
               icon: "calendar-outline",
             },
             {
               label: "Fees",
-              route: "/teacher/fees",
+              route: "/student/fees",
               icon: "card-outline",
             },
           ]}

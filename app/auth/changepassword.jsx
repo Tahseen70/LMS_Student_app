@@ -46,7 +46,7 @@ const ChangePasswordScreen = () => {
       if (isForgot) {
         router.replace("/auth/login");
       } else {
-        router.replace("/teacher/more");
+        router.replace("/student/more");
       }
     }
   };

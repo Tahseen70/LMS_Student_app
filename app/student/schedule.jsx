@@ -34,8 +34,6 @@ const TeacherScheduleScreen = () => {
 
   // Format data
   const formatData = (data) => {
-    console.log("DATA=");
-    console.log(data);
     let days = ["monday", "tuesday", "wednesday", "thursday"];
     if (timeDuration?.isFridayOn) days.push("friday");
 
@@ -51,8 +49,7 @@ const TeacherScheduleScreen = () => {
         const periods = timetable[day] || [];
         for (let i = 0; i < numberOfClasses; i++) {
           const periodData = findPeriodData(periods, i);
-          console.log("periodData=");
-          console.log(periodData);
+
           if (periodData?.isFree) {
             // Free period
             result[capitalize(day)][i] = {
@@ -90,12 +87,8 @@ const TeacherScheduleScreen = () => {
     timeDuration?.numberOfClasses > 0;
 
   const schedule = formatData(timeTable);
-  console.log("schedule=");
-  console.log(schedule);
-  console.log(timeDuration);
   const numClasses = timeDuration?.numberOfClasses || 0;
   const days = Object.keys(schedule);
-  console.log(days);
 
   return (
     <SafeAreaView style={styles.safeArea}>

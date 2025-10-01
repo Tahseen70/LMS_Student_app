@@ -178,7 +178,16 @@ const FeeScreen = () => {
 
           <View style={styles.row}>
             <Text style={styles.amount}>Rs. {formatNumber(netAmount)}</Text>
-            <Text style={styles.status}>
+            <Text
+              style={{
+                ...styles.status,
+                color: isExpired
+                  ? Colors.red
+                  : isPaid
+                  ? Colors.green
+                  : Colors.blue,
+              }}
+            >
               {isExpired ? "EXPIRED" : isPaid ? "PAID" : "PENDING"}
             </Text>
           </View>
@@ -306,7 +315,6 @@ const styles = StyleSheet.create({
   status: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "red",
   },
   dueText: {
     fontSize: 14,

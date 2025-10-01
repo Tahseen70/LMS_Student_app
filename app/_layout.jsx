@@ -9,7 +9,7 @@ import {
 import { Provider } from "react-redux";
 import { store } from "../redux/store";
 
-export default function RootLayout() {
+const RootLayout = () => {
   useEffect(() => {
     if (Platform.OS === "android") {
       const applyNavConfig = async () => {
@@ -41,4 +41,6 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </Provider>
   );
-}
+};
+
+export default RootLayout;

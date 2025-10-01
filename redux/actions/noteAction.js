@@ -44,7 +44,6 @@ export const DeleteTeacherNote = createAsyncThunk(
 
       return resp.data;
     } catch (error) {
-      console.log("Error adding note:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );
@@ -83,10 +82,6 @@ export const UpdateTeacherNote = createAsyncThunk(
 
       return resp.data;
     } catch (error) {
-      console.log(
-        "❌ Error updating note:",
-        error.response?.data || error.message
-      );
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );
@@ -105,10 +100,8 @@ export const getNotes = createAsyncThunk(
         limit,
       };
       const resp = await Axios.get("/note/student", { params });
-      console.log(resp.data);
       return resp.data;
     } catch (error) {
-      console.log(error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );

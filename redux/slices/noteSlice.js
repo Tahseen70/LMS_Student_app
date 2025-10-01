@@ -62,8 +62,6 @@ const noteSlice = createSlice({
       })
       .addCase(getNotes.fulfilled, (state, action) => {
         const data = action.payload?.notes || {};
-        console.log("DATA=");
-        console.log(data);
         const notes = Array.isArray(data.notes) ? data.notes : [];
         state.notes = notes;
         state.allNotes = [...(state.allNotes || []), ...notes];

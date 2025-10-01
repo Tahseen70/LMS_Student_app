@@ -15,7 +15,7 @@ import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
 import HeaderStyles from "../../styles/HeaderStyles";
 
-export default function ResetPasswordScreen() {
+const ResetPasswordScreen = () => {
   const dispatch = useDispatch();
   const Teacher = useSelector((state) => state.Teacher);
   const { updatePassword, loading } = Teacher;
@@ -56,7 +56,9 @@ export default function ResetPasswordScreen() {
       </View>
     </View>
   );
-}
+};
+
+export default ResetPasswordScreen;
 
 const styles = StyleSheet.create({
   ...ContainerStyles,

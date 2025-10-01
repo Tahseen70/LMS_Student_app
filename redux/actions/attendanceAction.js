@@ -71,9 +71,7 @@ export const getAttendanceByMonth = createAsyncThunk(
       let params = {
         date: String(date),
       };
-      console.log(date);
       const resp = await Axios.get("/attendance/student/month", { params });
-      console.log(resp.data);
       return resp.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(
@@ -90,9 +88,7 @@ export const getAttendanceStatsByMonth = createAsyncThunk(
       let params = {
         date: String(date),
       };
-      console.log(date);
       const resp = await Axios.get("/attendance/student/month/stats", { params });
-      console.log(resp.data);
       return resp.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(

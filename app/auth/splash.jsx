@@ -25,7 +25,7 @@ import Colors from "../../styles/Colors";
 
 const { height: screenHeight } = Dimensions.get("screen");
 
-export default function OnboardingScreen() {
+const OnboardingScreen = () => {
   const heightAnim = useRef(new Animated.Value(screenHeight)).current;
   const radiusAnim = useRef(new Animated.Value(0)).current;
   const [isFocusSchool, setIsFocusSchool] = useState(false);
@@ -201,7 +201,9 @@ export default function OnboardingScreen() {
       </View>
     </View>
   );
-}
+};
+
+export default OnboardingScreen;
 
 const styles = StyleSheet.create({
   container: {

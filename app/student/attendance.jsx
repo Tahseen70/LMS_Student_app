@@ -37,11 +37,8 @@ const StudentAttendanceScreen = () => {
   const Attendance = useSelector((state) => state.Attendance);
   const { attendances, stats, loading } = Attendance;
   const { present, absent, leave } = stats;
-  console.log(attendances);
-  // Generate dummy attendance each time month changes
 
   const renderItem = ({ item }) => {
-    console.log(item);
     return (
       <View style={styles.tableRow}>
         <Text style={styles.dateCell}>
@@ -50,9 +47,9 @@ const StudentAttendanceScreen = () => {
         <Text
           style={[
             styles.statusCell,
-            item.status === "present" && { color: Colors.present },
-            item.status === "absent" && { color: Colors.absent },
-            item.status === "leave" && { color: Colors.leave },
+            item.status === "present" && { color: Colors.green },
+            item.status === "absent" && { color: Colors.red },
+            item.status === "leave" && { color: Colors.blue },
           ]}
         >
           {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
@@ -132,15 +129,15 @@ const StudentAttendanceScreen = () => {
 
       {/* Summary */}
       <View style={styles.summaryRow}>
-        <View style={[styles.summaryBox, { backgroundColor: Colors.present }]}>
+        <View style={[styles.summaryBox, { backgroundColor: Colors.green }]}>
           <Text style={styles.summaryLabel}>Present</Text>
           <Text style={styles.summaryCount}>{present.toString()}</Text>
         </View>
-        <View style={[styles.summaryBox, { backgroundColor: Colors.absent }]}>
+        <View style={[styles.summaryBox, { backgroundColor: Colors.red }]}>
           <Text style={styles.summaryLabel}>Absent</Text>
           <Text style={styles.summaryCount}>{absent.toString()}</Text>
         </View>
-        <View style={[styles.summaryBox, { backgroundColor: Colors.leave }]}>
+        <View style={[styles.summaryBox, { backgroundColor: Colors.blue }]}>
           <Text style={styles.summaryLabel}>Leave</Text>
           <Text style={styles.summaryCount}>{leave.toString()}</Text>
         </View>

@@ -9,7 +9,6 @@ export const getAllschools = createAsyncThunk(
       const resp = await Axios.get(`${BASE_URL}/school/all`);
       return resp.data;
     } catch (error) {
-      console.log("Error fetching schools:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );
@@ -25,7 +24,6 @@ export const getAllcampuses = createAsyncThunk(
       const resp = await Axios.get(`${BASE_URL}/campus/all`, { params });
       return resp.data;
     } catch (error) {
-      console.log("Error fetching branch:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );
@@ -40,10 +38,8 @@ export const getBank = createAsyncThunk(
     try {
       let params = { campus };
       const resp = await Axios.get(`${BASE_URL}/bank`, { params });
-      console.log(resp.data);
       return resp.data;
     } catch (error) {
-      console.log("Error fetching bank:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );

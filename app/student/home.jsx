@@ -24,25 +24,25 @@ const dashboardItems = [
     id: "1",
     title: "Attendance",
     icon: "calendar-number-outline",
-    route: "/teacher/attendance",
+    route: "/student/attendance",
   },
   {
     id: "2",
     title: "Class Schedule",
     icon: "calendar-outline",
-    route: "/teacher/schedule",
+    route: "/student/schedule",
   },
   {
     id: "3",
     title: "Marks",
     icon: "school-outline",
-    route: "/teacher/marks",
+    route: "/student/marks",
   },
   {
     id: "4",
     title: "Notes",
     icon: "document-text-outline",
-    route: "/teacher/notes",
+    route: "/student/notes",
   },
 ];
 

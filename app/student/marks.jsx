@@ -33,7 +33,6 @@ const StudentResultScreen = () => {
   }, []);
 
   useEffect(() => {
-    console.log("USE EFFECT");
     dispatch(getAllGrades());
   }, [dispatch, showGrades]);
 

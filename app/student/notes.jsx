@@ -27,7 +27,7 @@ import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
 import HeaderStyles from "../../styles/HeaderStyles";
 
-export default function NotesScreen() {
+const NotesScreen = () => {
   const dispatch = useDispatch();
   const Note = useSelector((state) => state.Note);
   const { loading, allNotes = [], notesPage = 1, notesHasMore = false } = Note;
@@ -128,8 +128,6 @@ export default function NotesScreen() {
         dispatch(resetNotes());
         // if you use createAsyncThunk in RTK:
         const data = await dispatch(getSubjects()).unwrap();
-        // now 'data' is exactly what you returned in your thunk
-        console.log("Subjects:", data);
         const subjects = data?.subjects || [];
         if (subjects.length > 0) {
           const firstSubject = subjects[0];
@@ -268,7 +266,9 @@ export default function NotesScreen() {
       </Modal>
     </View>
   );
-}
+};
+
+export default NotesScreen;
 
 const styles = StyleSheet.create({
   ...ContainerStyles,

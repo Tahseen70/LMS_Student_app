@@ -27,11 +27,8 @@ export const getStudentExams = createAsyncThunk(
         params,
       });
 
-      console.log(resp.data);
-
       return resp.data;
     } catch (error) {
-      console.log(error.response);
       // Use rejectWithValue to pass error messages to the reducer
       if (error.response && error.response.data) {
         return rejectWithValue(error.response.data.message);
@@ -55,7 +52,6 @@ export const getAllGrades = createAsyncThunk(
     }
   }
 );
-
 
 // Add marks for students
 export const addClassMarks = createAsyncThunk(
@@ -140,7 +136,6 @@ export const getTeacherExamResult = createAsyncThunk(
       const resp = await Axios.get("/exam/teacher/result", { params });
       return resp.data;
     } catch (error) {
-      console.log("getTeacherExamResult Error:", error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
       );
