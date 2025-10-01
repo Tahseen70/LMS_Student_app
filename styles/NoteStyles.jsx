@@ -18,6 +18,9 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     elevation: 3,
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   textArea: {
     height: 100,
@@ -28,6 +31,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
     elevation: 3,
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   picker: {
     height: 50,

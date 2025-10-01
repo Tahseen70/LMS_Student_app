@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -106,7 +107,13 @@ export default function NotesScreen() {
 
         Alert.alert("Success ✅", "File saved to Grader folder");
       } else {
-        // handle iOS case separately if needed
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, {
+            mimeType: item.noteType || "application/pdf",
+          });
+        } else {
+          Alert.alert("Downloaded ✅", `Saved to app cache: ${uri}`);
+        }
       }
     } catch (error) {
       console.error("Android save error:", error);
@@ -311,6 +318,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     elevation: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   itemIcon: {
     width: 40,
@@ -334,6 +344,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 6,
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   modalOverlay: {
     flex: 1,
@@ -346,7 +359,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.tertiary,
     borderRadius: 8,
     paddingVertical: 10,
-    elevation: 4,
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   modalButton: {
     padding: 14,
@@ -364,6 +379,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 20,
     elevation: 5,
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   editTitle: {
     fontSize: 18,

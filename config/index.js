@@ -3,6 +3,7 @@ import { decode, encode } from "base-64";
 import Constants from "expo-constants";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
+import * as Sharing from "expo-sharing";
 import moment from "moment";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { Alert, Platform } from "react-native";
@@ -497,6 +498,13 @@ const generateChallan = async (fee, bank, campusStr) => {
     } else {
       // iOS can still use MediaLibrary or Share API
       // …
+              if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(tmpFileUri, {
+            mimeType: item.noteType || "application/pdf",
+          });
+        } else {
+          Alert.alert("Downloaded ✅", `Saved to app cache: ${uri}`);
+        }
     }
   } catch (error) {
     console.log(error);
@@ -521,7 +529,7 @@ const assetImages = [
   require("../assets/user_male.png"),
 ];
 
-const BASE_URL = "https://386946dd3eac.ngrok-free.app/api";
+const BASE_URL = "https://owner.mytokenmaker.com/api";
 
 export {
   assetImages,

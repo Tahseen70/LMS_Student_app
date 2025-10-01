@@ -1,4 +1,4 @@
-import { FontAwesome } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 import { Fragment } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -40,6 +40,9 @@ export default function TeacherLayout() {
             backgroundColor: Colors.tertiaryLight,
             borderTopWidth: 0,
             elevation: 5,
+            shadowOpacity: 0.5,
+            shadowRadius: 5,
+            shadowOffset: { width: 0, height: 1 },
           },
         }}
       >
@@ -49,7 +52,7 @@ export default function TeacherLayout() {
             title: "Home",
             tabBarLabel: "Home",
             tabBarIcon: ({ color }) => (
-              <FontAwesome name="home" size={26} color={color} />
+              <Ionicons name="home" size={26} color={color} />
             ),
           }}
         />
@@ -59,7 +62,7 @@ export default function TeacherLayout() {
             title: "Attendance",
             tabBarLabel: "Attendance",
             tabBarIcon: ({ color }) => (
-              <FontAwesome name="calendar-check-o" size={26} color={color} />
+              <Ionicons name="calendar-number" size={26} color={color} />
             ),
           }}
         />
@@ -69,7 +72,7 @@ export default function TeacherLayout() {
             title: "Marks",
             tabBarLabel: "Marks",
             tabBarIcon: ({ color }) => (
-              <FontAwesome name="graduation-cap" size={26} color={color} />
+              <Ionicons name="school" size={26} color={color} />
             ),
           }}
         />
@@ -79,7 +82,7 @@ export default function TeacherLayout() {
             title: "More",
             tabBarLabel: "More",
             tabBarIcon: ({ color }) => (
-              <FontAwesome name="bars" size={26} color={color} />
+              <Ionicons name="menu" size={26} color={color} />
             ),
           }}
         />

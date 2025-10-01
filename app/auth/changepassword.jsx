@@ -8,7 +8,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import PageHeader from "../../components/PageHeader";
@@ -135,6 +135,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 20,
     elevation: 3,
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   input: {
     flex: 1,
@@ -151,6 +154,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     elevation: 3,
     width: "100%",
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   resetButtonText: {
     color: Colors.tertiary,

@@ -75,6 +75,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     elevation: 2,
     width: "100%", //
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   resetButton: {
     backgroundColor: Colors.primary,

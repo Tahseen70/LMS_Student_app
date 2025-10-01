@@ -41,7 +41,7 @@ const dashboardItems = [
   {
     id: "4",
     title: "Notes",
-    icon: "file-text-o",
+    icon: "document-text-outline",
     route: "/teacher/notes",
   },
 ];
@@ -217,6 +217,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 20,
+    shadowOpacity: 0.5,
+    shadowRadius: 1,
+    shadowOffset: { width: 0, height: 1 },
   },
   welcomeIcon: {
     width: 80,
@@ -290,6 +293,9 @@ const styles = StyleSheet.create({
     borderRadius: 25, // outer radius
     elevation: 4,
     backgroundColor: Colors.tertiary,
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
   },
   cardGradient: {
     flex: 1,
