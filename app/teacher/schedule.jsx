@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
 import { getStudentTimeTable } from "../../redux/actions/studentAction";
 import Colors from "../../styles/Colors";

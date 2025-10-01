@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import RNPickerSelect from "react-native-picker-select";
 import { useDispatch, useSelector } from "react-redux";
+import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
 import {
   getAllExams,
@@ -18,7 +19,8 @@ const StudentResultScreen = () => {
   const Marks = useSelector((state) => state.Marks);
   const { allExams, results, selectedExam, grades } = Marks;
   const { studentResults, showGrades, showRemarks } = results;
-  const data = studentResults;
+  const data = studentResults || [];
+  const hasData = Boolean(data.length > 0);
 
   const totalMarks = data.reduce((sum, item) => sum + item.totalMarks, 0);
   const obtainedMarks = data.reduce((sum, item) => sum + item.obtainedMarks, 0);
@@ -74,145 +76,152 @@ const StudentResultScreen = () => {
           placeholder={{ label: "Choose Exam...", value: null }}
         />
       </View>
+      {hasData ? (
+        <Fragment>
+          {/* Result Summary Card */}
+          {selectedExam && (
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryTitle}>
+                {selectedExam.name} Result
+              </Text>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryText}>Total Marks:</Text>
+                <Text style={styles.summaryValue}>{totalMarks}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryText}>Obtained Marks:</Text>
+                <Text style={styles.summaryValue}>{obtainedMarks}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryText}>Percentage:</Text>
+                <Text style={styles.summaryValue}>{percentage}%</Text>
+              </View>
+            </View>
+          )}
 
-      {/* Result Summary Card */}
-      {selectedExam && (
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>{selectedExam.name} Result</Text>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryText}>Total Marks:</Text>
-            <Text style={styles.summaryValue}>{totalMarks}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryText}>Obtained Marks:</Text>
-            <Text style={styles.summaryValue}>{obtainedMarks}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryText}>Percentage:</Text>
-            <Text style={styles.summaryValue}>{percentage}%</Text>
-          </View>
-        </View>
-      )}
-
-      {/* Subject-wise Table */}
-      {selectedExam && (
-        <View style={styles.tableContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-            <View>
-              <ScrollView horizontal>
-                <FlatList
-                  data={data}
-                  keyExtractor={(item, idx) => idx.toString()}
-                  ListHeaderComponent={
-                    <View style={styles.tableHeader}>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.headerCell,
-                          columnStyles.subject,
-                        ]}
-                      >
-                        Subject
-                      </Text>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.headerCell,
-                          columnStyles.total,
-                        ]}
-                      >
-                        Total
-                      </Text>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.headerCell,
-                          columnStyles.obtained,
-                        ]}
-                      >
-                        Obtained
-                      </Text>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.headerCell,
-                          columnStyles.percent,
-                        ]}
-                      >
-                        %
-                      </Text>
-                      {showGrades && (
-                        <Text
-                          style={[
-                            styles.cell,
-                            styles.headerCell,
-                            columnStyles.grade,
-                          ]}
-                        >
-                          Grade
-                        </Text>
-                      )}
-                      {showRemarks && (
-                        <Text
-                          style={[
-                            styles.cell,
-                            styles.headerCell,
-                            columnStyles.remarks,
-                          ]}
-                        >
-                          Remarks
-                        </Text>
-                      )}
-                    </View>
-                  }
-                  renderItem={({ item }) => {
-                    const subjectPercent = (
-                      (item.obtainedMarks / item.totalMarks) *
-                      100
-                    ).toFixed(2);
-
-                    const matchedGrade = grades.find(
-                      (grade) =>
-                        subjectPercent >= grade.min &&
-                        subjectPercent <= grade.max
-                    );
-
-                    return (
-                      <View style={styles.tableRow}>
-                        <Text style={[styles.cell, columnStyles.subject]}>
-                          {item.subject}
-                        </Text>
-                        <Text style={[styles.cell, columnStyles.total]}>
-                          {item.totalMarks}
-                        </Text>
-                        <Text style={[styles.cell, columnStyles.obtained]}>
-                          {item.obtainedMarks}
-                        </Text>
-                        <Text style={[styles.cell, columnStyles.percent]}>
-                          {subjectPercent}%
-                        </Text>
-                        {showGrades && (
-                          <Text style={[styles.cell, columnStyles.grade]}>
-                            {matchedGrade ? matchedGrade.name : "-"}
-                          </Text>
-                        )}
-                        {showRemarks && (
+          {/* Subject-wise Table */}
+          {selectedExam && (
+            <View style={styles.tableContainer}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+                <View>
+                  <ScrollView horizontal>
+                    <FlatList
+                      data={data}
+                      keyExtractor={(item, idx) => idx.toString()}
+                      ListHeaderComponent={
+                        <View style={styles.tableHeader}>
                           <Text
-                            style={[styles.cell, columnStyles.remarks]}
-                            numberOfLines={1}
-                            ellipsizeMode="clip" // prevent wrapping
+                            style={[
+                              styles.cell,
+                              styles.headerCell,
+                              columnStyles.subject,
+                            ]}
                           >
-                            {matchedGrade ? matchedGrade.remarks : "-"}
+                            Subject
                           </Text>
-                        )}
-                      </View>
-                    );
-                  }}
-                />
+                          <Text
+                            style={[
+                              styles.cell,
+                              styles.headerCell,
+                              columnStyles.total,
+                            ]}
+                          >
+                            Total
+                          </Text>
+                          <Text
+                            style={[
+                              styles.cell,
+                              styles.headerCell,
+                              columnStyles.obtained,
+                            ]}
+                          >
+                            Obtained
+                          </Text>
+                          <Text
+                            style={[
+                              styles.cell,
+                              styles.headerCell,
+                              columnStyles.percent,
+                            ]}
+                          >
+                            %
+                          </Text>
+                          {showGrades && (
+                            <Text
+                              style={[
+                                styles.cell,
+                                styles.headerCell,
+                                columnStyles.grade,
+                              ]}
+                            >
+                              Grade
+                            </Text>
+                          )}
+                          {showRemarks && (
+                            <Text
+                              style={[
+                                styles.cell,
+                                styles.headerCell,
+                                columnStyles.remarks,
+                              ]}
+                            >
+                              Remarks
+                            </Text>
+                          )}
+                        </View>
+                      }
+                      renderItem={({ item }) => {
+                        const subjectPercent = (
+                          (item.obtainedMarks / item.totalMarks) *
+                          100
+                        ).toFixed(2);
+
+                        const matchedGrade = grades.find(
+                          (grade) =>
+                            subjectPercent >= grade.min &&
+                            subjectPercent <= grade.max
+                        );
+
+                        return (
+                          <View style={styles.tableRow}>
+                            <Text style={[styles.cell, columnStyles.subject]}>
+                              {item.subject}
+                            </Text>
+                            <Text style={[styles.cell, columnStyles.total]}>
+                              {item.totalMarks}
+                            </Text>
+                            <Text style={[styles.cell, columnStyles.obtained]}>
+                              {item.obtainedMarks}
+                            </Text>
+                            <Text style={[styles.cell, columnStyles.percent]}>
+                              {subjectPercent}%
+                            </Text>
+                            {showGrades && (
+                              <Text style={[styles.cell, columnStyles.grade]}>
+                                {matchedGrade ? matchedGrade.name : "-"}
+                              </Text>
+                            )}
+                            {showRemarks && (
+                              <Text
+                                style={[styles.cell, columnStyles.remarks]}
+                                numberOfLines={1}
+                                ellipsizeMode="clip" // prevent wrapping
+                              >
+                                {matchedGrade ? matchedGrade.remarks : "-"}
+                              </Text>
+                            )}
+                          </View>
+                        );
+                      }}
+                    />
+                  </ScrollView>
+                </View>
               </ScrollView>
             </View>
-          </ScrollView>
-        </View>
+          )}
+        </Fragment>
+      ) : (
+        <ListEmpty text={"No Exam Data Found"} />
       )}
     </View>
   );

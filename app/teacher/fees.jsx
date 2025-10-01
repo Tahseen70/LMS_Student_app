@@ -15,6 +15,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import { formatNumber, generateChallan } from "../../config";
 import { getBank } from "../../redux/actions/schoolAction";
 import { getStudentFee } from "../../redux/actions/studentAction";
@@ -87,12 +88,14 @@ const FeeScreen = () => {
       .clone()
       .startOf("month")
       .format("YYYY-MM-DD");
+    dispatch(setStudent({ name: "fee", value: null }));
     dispatch(getStudentFee({ month: formatted }));
     setSelectedMonth(month); // keep Date object for UI
   };
 
   useEffect(() => {
     (async () => {
+      dispatch(setStudent({ name: "fee", value: null }));
       const campusStr = await AsyncStorage.getItem("school");
       const campus = JSON.parse(campusStr);
       const campusId = campus._id;
@@ -115,8 +118,6 @@ const FeeScreen = () => {
     dispatch(setStudent({ name: "loading", value: false }));
     // await createDummyPDF();
   };
-
-  const formatMonth = (m) => moment(m).format("YYYY-MM-DD");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -166,7 +167,12 @@ const FeeScreen = () => {
       </View>
 
       {/* Fee Box */}
-      {fee ? (
+      {!fee && loading ? (
+        <SkeletonLoader
+          style={{ height: 175, borderRadius: 12 }}
+          containerStyle={{ marginHorizontal: 8 }}
+        />
+      ) : fee ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Fee</Text>
 

@@ -4,9 +4,9 @@ import { createShimmerPlaceholder } from "react-native-shimmer-placeholder";
 import Colors from "../styles/Colors";
 const ShimmerPlaceholder = createShimmerPlaceholder(LinearGradient);
 
-const SkeletonLoader = ({ number = 1, style = {} }) => {
+const SkeletonLoader = ({ number = 1, style = {}, containerStyle = {} }) => {
   return (
-    <View style={styles.container}>
+    <View style={{ ...styles.container, ...containerStyle }}>
       {[...Array(number)].map((_, index) => (
         <ShimmerPlaceholder
           style={{ ...styles.shimmer, ...style }}
@@ -18,9 +18,7 @@ const SkeletonLoader = ({ number = 1, style = {} }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    // marginHorizontal: 8,
-  },
+  container: {},
   shimmer: {
     width: "100%",
     height: 60,

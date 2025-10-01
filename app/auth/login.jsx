@@ -38,6 +38,7 @@ const LoginScreen = () => {
   const School = useSelector((state) => state.School);
   const { selectedSchool } = School;
   const [hasToken, setHasToken] = useState(false);
+  const passwordRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -85,7 +86,7 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     Keyboard.dismiss();
-    
+
     if (!email.trim() || !password.trim()) {
       Alert.alert(
         "Missing Credentials",
@@ -219,6 +220,9 @@ const LoginScreen = () => {
               onChangeText={(text) => onChange({ name: "email", value: text })}
               keyboardType="email-address"
               autoCapitalize="none"
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => passwordRef.current?.focus()}
             />
 
             <View style={styles.passwordContainer}>
@@ -234,6 +238,12 @@ const LoginScreen = () => {
                 onChangeText={(text) =>
                   onChange({ name: "password", value: text })
                 }
+                returnKeyType="done"
+                submitBehavior="blurAndSubmit" // default, but explicit
+                onSubmitEditing={() => {
+                  Keyboard.dismiss();
+                  handleLogin();
+                }}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword((prev) => !prev)}
