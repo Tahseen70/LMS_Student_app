@@ -901,7 +901,7 @@ const generateChallan = async (fee, bank, campusStr) => {
     const pdfBase64 = doc.output("datauristring").split(",")[1];
 
     // put into a temp file first
-    const tmpFileUri = FileSystem.cacheDirectory + `challan_${Date.now()}.pdf`;
+    const tmpFileUri = FileSystem.cacheDirectory + `${studentName} (${formattedMonth}).pdf`;
     await FileSystem.writeAsStringAsync(tmpFileUri, pdfBase64, {
       encoding: FileSystem.EncodingType.Base64,
     });
@@ -931,15 +931,13 @@ const generateChallan = async (fee, bank, campusStr) => {
 
       Alert.alert("Success ✅", `PDF saved to ${APP_NAME} folder`);
     } else {
-      // iOS can still use MediaLibrary or Share API
-      // …
-              if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(tmpFileUri, {
-            mimeType: item.noteType || "application/pdf",
-          });
-        } else {
-          Alert.alert("Downloaded ✅", `Saved to app cache: ${uri}`);
-        }
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(tmpFileUri, {
+          mimeType: "application/pdf",
+        });
+      } else {
+        Alert.alert("Downloaded ✅", `Saved to app cache: ${uri}`);
+      }
     }
   } catch (error) {
     console.log(error);

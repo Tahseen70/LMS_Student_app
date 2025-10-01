@@ -37,14 +37,41 @@ const LoginScreen = () => {
 
   const School = useSelector((state) => state.School);
   const { selectedSchool } = School;
-  const [hasToken, setHasToken] = useState(false);
+  const [hasBiometric, setHasBiometric] = useState(false);
+  const [biometricType, setBiometricType] = useState(0);
   const passwordRef = useRef(null);
 
   useEffect(() => {
     (async () => {
       try {
         const token = await AsyncStorage.getItem("token");
-        if (token) setHasToken(true);
+        if (token) {
+          const compatible = await LocalAuthentication.hasHardwareAsync();
+          console.log("compatible=", compatible);
+          const enrolled = await LocalAuthentication.isEnrolledAsync();
+          console.log("enrolled=", enrolled);
+          if (enrolled && compatible) {
+            setHasBiometric(true);
+            const types =
+              await LocalAuthentication.supportedAuthenticationTypesAsync();
+            if (
+              types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)
+            ) {
+              setBiometricType(1);
+            } else if (
+              types.includes(
+                LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
+              ) ||
+              types.includes(LocalAuthentication.AuthenticationType.IRIS)
+            ) {
+              setBiometricType(2);
+            } else {
+              setHasBiometric(false);
+            }
+          } else {
+            setHasBiometric(false);
+          }
+        }
 
         if (student) router.replace("/teacher/home");
 
@@ -276,16 +303,32 @@ const LoginScreen = () => {
               </TouchableOpacity>
             </Animated.View>
 
-            {hasToken && (
+            {hasBiometric && (
               <TouchableOpacity
                 onPress={handleBiometricLogin}
                 style={styles.biometricButton}
               >
-                <Ionicons
-                  name="finger-print"
-                  size={40}
-                  color={Colors.primary}
-                />
+                {biometricType === 1 ? (
+                  <Ionicons
+                    name={"finger-print"}
+                    size={40}
+                    color={Colors.primary}
+                  />
+                ) : (
+                  <View style={styles.faceIconContainer}>
+                    <Ionicons
+                      name="scan-outline"
+                      size={50}
+                      color={Colors.primary}
+                    />
+                    <Ionicons
+                      name="happy-outline"
+                      size={30}
+                      color={Colors.primary}
+                      style={styles.faceIcon}
+                    />
+                  </View>
+                )}
               </TouchableOpacity>
             )}
           </View>
@@ -400,4 +443,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  // IOS Styles
+  faceIconContainer: {
+    position: "relative",
+    width: 50,
+    height: 50,
+  },
+  faceIcon: { position: "absolute", top: 10, left: 10 },
 });
