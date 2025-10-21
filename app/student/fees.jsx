@@ -3,14 +3,12 @@ import moment from "moment";
 import React, { useEffect, useState } from "react";
 import {
   LayoutAnimation,
-  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  UIManager,
-  View,
+  View
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
@@ -21,14 +19,6 @@ import { getBank } from "../../redux/actions/schoolAction";
 import { getStudentFee } from "../../redux/actions/studentAction";
 import { setStudent } from "../../redux/slices/studentSlice";
 import Colors from "../../styles/Colors";
-
-// Enable LayoutAnimation on Android
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 // Generate last 6 months including current
 const getMonths = (count = 12, offset = 0) => {
@@ -87,7 +77,7 @@ const FeeScreen = () => {
     const formatted = moment(month)
       .clone()
       .startOf("month")
-      .format("YYYY-MM-DD");
+      .format("YYYY-MM-D");
     dispatch(setStudent({ name: "fee", value: null }));
     dispatch(getStudentFee({ month: formatted }));
     setSelectedMonth(month); // keep Date object for UI
@@ -105,7 +95,7 @@ const FeeScreen = () => {
       const formatted = moment(now)
         .clone()
         .startOf("month")
-        .format("YYYY-MM-DD");
+        .format("YYYY-MM-D");
       dispatch(getStudentFee({ month: formatted }));
       setSelectedMonth(now); // keep Date object for UI
     })();

@@ -1,16 +1,16 @@
 {
   "expo": {
     "name": "Grader",
-    "slug": "grader-lms-app",
+    "slug": "grader-lms-student",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "graderlmsapp",
+    "scheme": "graderlmsappstudent",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.graderlmsapp"
+      "bundleIdentifier": "com.anonymous.graderlmsapp.student"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
         "backgroundColor": "#1975C0"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.graderlmsapp"
+      "package": "com.anonymous.graderlmsapp.student"
     },
     "web": {
       "bundler": "metro",
@@ -43,7 +43,10 @@
           "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
           "isAccessMediaLocationEnabled": true
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser",
+      "expo-asset"
     ],
     "extra": {
       "router": {},

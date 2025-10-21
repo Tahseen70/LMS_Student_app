@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
-import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system/legacy";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -26,6 +25,7 @@ import { setSubject } from "../../redux/slices/subjectSlice";
 import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
 import HeaderStyles from "../../styles/HeaderStyles";
+import { fetch } from "expo/fetch";
 
 const NotesScreen = () => {
   const dispatch = useDispatch();
@@ -50,16 +50,19 @@ const NotesScreen = () => {
   };
 
   const handleDownload = async (item, subject) => {
+    const startTotal = Date.now();
     dispatch(setNote({ name: "loading", value: true }));
+
     try {
       if (!item || !item.noteUrl) {
         Alert.alert("Error", "File URL not found.");
         return;
       }
 
-      // file name & extension
+      // 🧾 File name & extension
       let name = item.name || "file";
       let ext = "pdf";
+
       if (item.noteType) {
         if (item.noteType.includes("/")) {
           const mimeToExt = {
@@ -78,49 +81,344 @@ const NotesScreen = () => {
         .replace(/[/\\?%*:|"<>.]/g, "_")
         .trim()
         .replace(/\s+/g, "_");
+
       const filename = `${name}.${ext}`;
-      const localUri = FileSystem.cacheDirectory + filename;
-
-      // Get Subject Info
       const subjectName = subject.name;
-      // download into cache
-      const { uri } = await FileSystem.downloadAsync(item.noteUrl, localUri);
 
+      console.log(`📘 Downloading for subject: ${subjectName}`);
+
+      // 🕒 1️⃣ Download using expo/fetch
+      const startDownload = Date.now();
+
+      const response = await fetch(item.noteUrl);
+      if (!response.ok)
+        throw new Error(`HTTP error! Status: ${response.status}`);
+
+      // Save to cache using expo-file-system
+      const cacheUri = `${FileSystem.cacheDirectory}${filename}`;
+      const file = await FileSystem.writeAsStringAsync(
+        cacheUri,
+        await response.text(),
+        { encoding: FileSystem.EncodingType.Base64 }
+      );
+
+      const endDownload = Date.now();
+      console.log(
+        `⏱️ Download took: ${((endDownload - startDownload) / 1000).toFixed(
+          2
+        )}s`
+      );
+
+      // 🧭 Android: Save to Grader folder
       if (Platform.OS === "android") {
-        // get/create Grader folder URI
-        const graderUri = await getGraderFolderUri(["Notes", subjectName]);
+        console.log("📂 Platform: Android");
 
-        // create file in Grader folder
+        // 🕒 2️⃣ Folder selection / creation
+        const startPicker = Date.now();
+        const graderUri = await getGraderFolderUri(["Notes", subjectName]);
+        const endPicker = Date.now();
+        console.log(
+          `📁 Folder setup took: ${((endPicker - startPicker) / 1000).toFixed(
+            2
+          )}s`
+        );
+        console.log(`📍 Final destination URI: ${graderUri}`);
+
+        // 🕒 3️⃣ File creation
+        const startCreate = Date.now();
         const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
           graderUri,
           filename,
           item.noteType || "application/pdf"
         );
+        const endCreate = Date.now();
+        console.log(
+          `📄 File creation took: ${((endCreate - startCreate) / 1000).toFixed(
+            2
+          )}s`
+        );
 
-        const base64 = await FileSystem.readAsStringAsync(uri, {
+        // 🕒 4️⃣ Read cache file
+        const startRead = Date.now();
+        const base64 = await FileSystem.readAsStringAsync(cacheUri, {
           encoding: FileSystem.EncodingType.Base64,
         });
+        const endRead = Date.now();
+        console.log(
+          `📖 Reading cache file took: ${((endRead - startRead) / 1000).toFixed(
+            2
+          )}s`
+        );
 
+        // 🕒 5️⃣ Write to SAF destination
+        const startWrite = Date.now();
         await FileSystem.writeAsStringAsync(newUri, base64, {
           encoding: FileSystem.EncodingType.Base64,
         });
+        const endWrite = Date.now();
+        console.log(
+          `✍️ Writing to destination took: ${(
+            (endWrite - startWrite) /
+            1000
+          ).toFixed(2)}s`
+        );
 
         Alert.alert("Success ✅", "File saved to Grader folder");
       } else {
+        // 🧭 iOS / Web
         if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(uri, {
+          await Sharing.shareAsync(cacheUri, {
             mimeType: item.noteType || "application/pdf",
           });
         } else {
-          Alert.alert("Downloaded ✅", `Saved to app cache: ${uri}`);
+          Alert.alert("Downloaded ✅", `Saved to app cache: ${cacheUri}`);
         }
       }
     } catch (error) {
-      console.error("Android save error:", error);
-      Alert.alert("Error ❌", "Could not save to Downloads folder.");
+      console.error("❌ Download error:", error);
+      Alert.alert("Error ❌", error.message || "Could not save to folder.");
     }
+
     dispatch(setNote({ name: "loading", value: false }));
+    const endTotal = Date.now();
+    console.log(
+      `✅ Total time: ${((endTotal - startTotal) / 1000).toFixed(2)}s`
+    );
   };
+
+  // const handleDownload = async (item, subject) => {
+  //   const startTotal = Date.now();
+  //   dispatch(setNote({ name: "loading", value: true }));
+
+  //   try {
+  //     if (!item || !item.noteUrl) {
+  //       Alert.alert("Error", "File URL not found.");
+  //       return;
+  //     }
+
+  //     // 🧾 File name & extension
+  //     let name = item.name || "file";
+  //     let ext = "pdf";
+
+  //     if (item.noteType) {
+  //       if (item.noteType.includes("/")) {
+  //         const mimeToExt = {
+  //           "application/pdf": "pdf",
+  //           "image/jpeg": "jpg",
+  //           "image/png": "png",
+  //           "text/plain": "txt",
+  //         };
+  //         ext = mimeToExt[item.noteType] || "bin";
+  //       } else {
+  //         ext = item.noteType;
+  //       }
+  //     }
+
+  //     name = name
+  //       .replace(/[/\\?%*:|"<>.]/g, "_")
+  //       .trim()
+  //       .replace(/\s+/g, "_");
+
+  //     const filename = `${name}.${ext}`;
+  //     const url = item.noteUrl;
+  //     const subjectName = subject.name;
+
+  //     console.log(`📘 Downloading for subject: ${subjectName}`);
+
+  //     // 🕒 1️⃣ Download into cache
+  //     const startDownload = Date.now();
+  //     const cacheDir = new Directory(Paths.cache);
+  //     const downloadedFile = await File.downloadFileAsync(url, cacheDir, {
+  //       idempotent: true,
+  //     });
+  //     const uri = downloadedFile.uri;
+  //     const endDownload = Date.now();
+  //     console.log(
+  //       `⏱️ Download took: ${((endDownload - startDownload) / 1000).toFixed(
+  //         2
+  //       )}s`
+  //     );
+
+  //     // 🧭 Android: Save to Grader folder
+  //     if (Platform.OS === "android") {
+  //       console.log("📂 Platform: Android");
+
+  //       // 🕒 2️⃣ Folder selection / creation
+  //       const startPicker = Date.now();
+  //       const graderUri = await getGraderFolderUri(["Notes", subjectName]);
+  //       const endPicker = Date.now();
+  //       console.log(
+  //         `📁 Folder setup took: ${((endPicker - startPicker) / 1000).toFixed(
+  //           2
+  //         )}s`
+  //       );
+  //       console.log(`📍 Final destination URI: ${graderUri}`);
+
+  //       // 🕒 3️⃣ File creation
+  //       const startCreate = Date.now();
+  //       const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
+  //         graderUri,
+  //         filename,
+  //         item.noteType || "application/pdf"
+  //       );
+  //       const endCreate = Date.now();
+  //       console.log(
+  //         `📄 File creation took: ${((endCreate - startCreate) / 1000).toFixed(
+  //           2
+  //         )}s`
+  //       );
+
+  //       // 🕒 4️⃣ Read from cache
+  //       const startRead = Date.now();
+  //       const base64 = await FileSystem.readAsStringAsync(uri, {
+  //         encoding: FileSystem.EncodingType.Base64,
+  //       });
+  //       const endRead = Date.now();
+  //       console.log(
+  //         `📖 Reading cache file took: ${((endRead - startRead) / 1000).toFixed(
+  //           2
+  //         )}s`
+  //       );
+
+  //       // 🕒 5️⃣ Write to SAF destination
+  //       const startWrite = Date.now();
+  //       await FileSystem.writeAsStringAsync(newUri, base64, {
+  //         encoding: FileSystem.EncodingType.Base64,
+  //       });
+  //       const endWrite = Date.now();
+  //       console.log(
+  //         `✍️ Writing to destination took: ${(
+  //           (endWrite - startWrite) /
+  //           1000
+  //         ).toFixed(2)}s`
+  //       );
+
+  //       Alert.alert("Success ✅", "File saved to Grader folder");
+  //     } else {
+  //       // 🧭 iOS / Web
+  //       if (await Sharing.isAvailableAsync()) {
+  //         await Sharing.shareAsync(uri, {
+  //           mimeType: item.noteType || "application/pdf",
+  //         });
+  //       } else {
+  //         Alert.alert("Downloaded ✅", `Saved to app cache: ${uri}`);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("❌ Android save error:", error);
+  //     Alert.alert("Error ❌", "Could not save to Downloads folder.");
+  //   }
+
+  //   dispatch(setNote({ name: "loading", value: false }));
+  //   const endTotal = Date.now();
+  //   console.log(
+  //     `✅ Total time: ${((endTotal - startTotal) / 1000).toFixed(2)}s`
+  //   );
+  // };
+
+  // const handleDownload = async (item, subject) => {
+  //   const startTotal = Date.now();
+  //   dispatch(setNote({ name: "loading", value: true }));
+
+  //   try {
+  //     if (!item?.noteUrl) {
+  //       Alert.alert("Error", "File URL not found.");
+  //       return;
+  //     }
+
+  //     let name = item.name || "file";
+  //     let ext = "pdf";
+  //     if (item.noteType?.includes("/")) {
+  //       const mimeToExt = {
+  //         "application/pdf": "pdf",
+  //         "image/jpeg": "jpg",
+  //         "image/png": "png",
+  //         "text/plain": "txt",
+  //       };
+  //       ext = mimeToExt[item.noteType] || "bin";
+  //     }
+
+  //     name = name
+  //       .replace(/[/\\?%*:|"<>.]/g, "_")
+  //       .trim()
+  //       .replace(/\s+/g, "_");
+  //     const filename = `${name}.${ext}`;
+  //     const subjectName = subject.name;
+
+  //     console.log(`📘 Downloading for subject: ${subjectName}`);
+
+  //     // 🕒 1️⃣ Download using expo/fetch (binary-safe)
+  //     const startDownload = Date.now();
+  //     const response = await fetch(item.noteUrl);
+
+  //     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  //     const blob = await response.blob();
+  //     const buffer = await blob.arrayBuffer();
+  //     const base64 = Buffer.from(buffer).toString("base64");
+
+  //     // write to cache
+  //     const cacheUri = `${FileSystem.cacheDirectory}${filename}`;
+  //     await FileSystem.writeAsStringAsync(cacheUri, base64, {
+  //       encoding: FileSystem.EncodingType.Base64,
+  //     });
+  //     const endDownload = Date.now();
+  //     console.log(
+  //       `⏱️ Download took: ${((endDownload - startDownload) / 1000).toFixed(
+  //         2
+  //       )}s`
+  //     );
+
+  //     // 🧭 Save to Android folder
+  //     if (Platform.OS === "android") {
+  //       const startPicker = Date.now();
+  //       const graderUri = await getGraderFolderUri(["Notes", subjectName]);
+  //       const endPicker = Date.now();
+  //       console.log(
+  //         `📁 Folder setup took: ${((endPicker - startPicker) / 1000).toFixed(
+  //           2
+  //         )}s`
+  //       );
+
+  //       const startCreate = Date.now();
+  //       const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
+  //         graderUri,
+  //         filename,
+  //         item.noteType || "application/pdf"
+  //       );
+  //       const endCreate = Date.now();
+  //       console.log(
+  //         `📄 File creation took: ${((endCreate - startCreate) / 1000).toFixed(
+  //           2
+  //         )}s`
+  //       );
+
+  //       const startWrite = Date.now();
+  //       await FileSystem.writeAsStringAsync(newUri, base64, {
+  //         encoding: FileSystem.EncodingType.Base64,
+  //       });
+  //       const endWrite = Date.now();
+  //       console.log(
+  //         `✍️ Writing took: ${((endWrite - startWrite) / 1000).toFixed(2)}s`
+  //       );
+
+  //       Alert.alert("Success ✅", "File saved to Grader folder");
+  //     } else {
+  //       await Sharing.shareAsync(cacheUri, {
+  //         mimeType: item.noteType || "application/pdf",
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error("❌ Download error:", error);
+  //     Alert.alert("Error ❌", error.message);
+  //   }
+
+  //   dispatch(setNote({ name: "loading", value: false }));
+  //   const endTotal = Date.now();
+  //   console.log(
+  //     `✅ Total time: ${((endTotal - startTotal) / 1000).toFixed(2)}s`
+  //   );
+  // };
 
   useEffect(() => {
     (async () => {
@@ -419,38 +717,3 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 });
-
-// Check if file is a media type (image/video) or document
-// const isMediaFile =
-//   item.noteType &&
-//   (item.noteType.startsWith("image/") ||
-//     item.noteType.startsWith("video/"));
-
-// if (isMediaFile) {
-//   // Handle media files (images/videos) - save to gallery
-//   const { status } = await MediaLibrary.requestPermissionsAsync();
-//   if (status !== "granted") {
-//     Alert.alert(
-//       "Permission required",
-//       "Storage permission is needed to save media files."
-//     );
-//     return;
-//   }
-
-//   const asset = await MediaLibrary.createAssetAsync(uri);
-//   await MediaLibrary.createAlbumAsync("Download", asset, false);
-//   Alert.alert("Success ✅", "Media file saved to your gallery.");
-// } else {
-//   // Handle documents (PDF, txt, etc.) - use Sharing API
-//   // if (await Sharing.isAvailableAsync()) {
-//   //   await Sharing.shareAsync(uri, {
-//   //     mimeType: item.noteType || "application/pdf",
-//   //     dialogTitle: `Save ${filename}`,
-//   //     UTI: "public.data",
-//   //   });
-//   // } else {
-//   // Fallback: Save to app's document directory
-//   // const documentUri = FileSystem.documentDirectory + filename;
-//   // await FileSystem.copyAsync({ from: uri, to: documentUri });
-
-// }

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { decode, encode } from "base-64";
 import Constants from "expo-constants";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
 import moment from "moment";
@@ -486,7 +486,8 @@ const generateChallan = async (fee, bank, campusStr) => {
     const pdfBase64 = doc.output("datauristring").split(",")[1];
 
     // put into a temp file first
-    const tmpFileUri = FileSystem.cacheDirectory + `${studentName} (${formattedMonth}).pdf`;
+    const tmpFileUri =
+      FileSystem.cacheDirectory + `${studentName} (${formattedMonth}).pdf`;
     await FileSystem.writeAsStringAsync(tmpFileUri, pdfBase64, {
       encoding: FileSystem.EncodingType.Base64,
     });
@@ -547,7 +548,8 @@ const assetImages = [
   require("../assets/user_male.png"),
 ];
 
-const BASE_URL = "https://owner.mytokenmaker.com/api";
+const BASE_URL = "https://owner.graderlms.com/api";
+// const BASE_URL = "http://757554055b03.ngrok-free.app/api";
 
 export {
   assetImages,

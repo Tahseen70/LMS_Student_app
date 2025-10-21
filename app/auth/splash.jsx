@@ -18,7 +18,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { assetImages, hexToRgba } from "../../config";
 import {
   getAllcampuses,
-  getAllschools, // ✅ FIX: added import
+  getAllschools,
 } from "../../redux/actions/schoolAction";
 import { setSchool } from "../../redux/slices/schoolSlice";
 import Colors from "../../styles/Colors";
