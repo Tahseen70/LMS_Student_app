@@ -10,6 +10,7 @@ import {
 
 const initialState = {
   loading: false,
+  loaderText: "",
   students: [],
   email: "",
   password: "",

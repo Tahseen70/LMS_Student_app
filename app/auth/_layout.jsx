@@ -6,6 +6,7 @@ import Loader from "../../components/Loader";
 const AuthLayout = () => {
   const Student = useSelector((state) => state.Student);
   const studentLoading = Student.loading;
+  const loaderText = Student.loaderText;
 
   const School = useSelector((state) => state.School);
   const schoolLoading = School.loading;
@@ -14,7 +15,7 @@ const AuthLayout = () => {
 
   return (
     <Fragment>
-      <Loader loading={loading} />
+      <Loader loading={loading} loaderText={loaderText} />
       <Stack
         screenOptions={{
           headerShown: false,

@@ -19,6 +19,7 @@ if (!global.atob) {
 
 // now it's safe to import jsPDF
 import { jsPDF } from "jspdf";
+import { File, Paths } from "expo-file-system";
 
 // ✅ wrap baseUri usage in a validator
 const getBaseUri = async () => {
@@ -482,22 +483,22 @@ const generateChallan = async (fee, bank, campusStr) => {
     drawChallan(margin + sectionWidth, "Office Copy");
     drawChallan(margin + sectionWidth * 2, "Student Copy");
 
-    /** ⬇️ instead of blob, get base64 */
-    const pdfBase64 = doc.output("datauristring").split(",")[1];
+    const filename = `${formattedMonth}.pdf`;
+
+    const pdfBytes = doc.output("arraybuffer");
+
+    const bytes = new Uint8Array(pdfBytes);
+
+    const cacheFile = new File(Paths.cache, filename);
+
+    await cacheFile.write(bytes);
 
     // put into a temp file first
-    const tmpFileUri =
-      FileSystem.cacheDirectory + `${studentName} (${formattedMonth}).pdf`;
-    await FileSystem.writeAsStringAsync(tmpFileUri, pdfBase64, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-    const filename = `${formattedMonth}.pdf`;
+    const cacheUri = cacheFile.uri;
 
     if (Platform.OS === "android") {
       // ask for the Grader folder like before
       const graderUri = await getGraderFolderUri(["Challans"]);
-
       // create an empty PDF file there
       const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
         graderUri,
@@ -505,20 +506,14 @@ const generateChallan = async (fee, bank, campusStr) => {
         "application/pdf"
       );
 
-      // read temp file back into base64
-      const base64 = await FileSystem.readAsStringAsync(tmpFileUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
       // write base64 into SAF file
-      await FileSystem.writeAsStringAsync(newUri, base64, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+      const file = new File(newUri);
+      file.write(bytes);
 
       Alert.alert("Success ✅", `PDF saved to ${APP_NAME} folder`);
     } else {
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(tmpFileUri, {
+        await Sharing.shareAsync(cacheUri, {
           mimeType: "application/pdf",
         });
       } else {
@@ -551,6 +546,19 @@ const assetImages = [
 const BASE_URL = "https://owner.graderlms.com/api";
 // const BASE_URL = "http://757554055b03.ngrok-free.app/api";
 
+const getExtensionName = (url) => {
+  try {
+    const urlPath = new URL(url).pathname;
+    const fileMatch = urlPath.match(/\.([a-zA-Z0-9]+)(\?|$)/);
+    if (fileMatch && fileMatch[1]) {
+      return fileMatch[1].toLowerCase();
+    }
+    return null;
+  } catch (e) {
+    console.warn("⚠️ Could not parse filename from URL:", e.message);
+  }
+};
+
 export {
   assetImages,
   BASE_URL,
@@ -560,6 +568,6 @@ export {
   generateChallan,
   getGraderFolderUri,
   hexToRgba,
-  isValidEmail
+  isValidEmail,
+  getExtensionName,
 };
-

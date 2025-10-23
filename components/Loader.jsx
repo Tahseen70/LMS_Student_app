@@ -1,14 +1,20 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Colors from "../styles/Colors";
 import { UIActivityIndicator } from "./LoaderComponents";
 
-const Loader = ({ loading }) => {
+const Loader = ({ loading, loaderText = "" }) => {
   if (!loading) return null;
 
   return (
     <View style={styles.loaderOverlay}>
-      <UIActivityIndicator color={Colors.primary} width={50} height={50} />
+      <UIActivityIndicator
+        style={styles.loader}
+        color={Colors.tertiary}
+        width={50}
+        height={50}
+      />
+      {loaderText && <Text style={styles.loaderText}>{loaderText}</Text>}
     </View>
   );
 };
@@ -26,5 +32,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 100,
+  },
+  loader: {
+    maxHeight: 100,
+  },
+  loaderText: {
+    fontSize: 18,
+    color: Colors.tertiary,
   },
 });

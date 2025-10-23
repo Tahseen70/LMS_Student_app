@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
+import { Paths, File, Directory } from "expo-file-system";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -17,7 +18,7 @@ import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
 import SkeletonLoader from "../../components/SkeletonLoader";
-import { getGraderFolderUri, hexToRgba } from "../../config";
+import { getExtensionName, getGraderFolderUri, hexToRgba } from "../../config";
 import { getNotes } from "../../redux/actions/noteAction";
 import { getSubjects } from "../../redux/actions/subjectAction";
 import { resetNotes, setNote } from "../../redux/slices/noteSlice";
@@ -26,11 +27,15 @@ import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
 import HeaderStyles from "../../styles/HeaderStyles";
 import { fetch } from "expo/fetch";
+import { setStudent } from "../../redux/slices/studentSlice";
 
 const NotesScreen = () => {
   const dispatch = useDispatch();
   const Note = useSelector((state) => state.Note);
   const { loading, allNotes = [], notesPage = 1, notesHasMore = false } = Note;
+
+  const Student = useSelector((state) => state.Student);
+  const { loaderText } = Student;
 
   const Subject = useSelector((state) => state.Subject);
   const { subjects, selectedSubject } = Subject;
@@ -50,32 +55,28 @@ const NotesScreen = () => {
   };
 
   const handleDownload = async (item, subject) => {
+    dispatch(
+      setStudent({
+        name: "loaderText",
+        value: "Please Wait...Downloading File",
+      })
+    );
     const startTotal = Date.now();
     dispatch(setNote({ name: "loading", value: true }));
 
+    let cacheFile = null;
+
     try {
-      if (!item || !item.noteUrl) {
+      const url = item?.noteUrl;
+      if (!item || !url) {
         Alert.alert("Error", "File URL not found.");
         return;
       }
 
       // 🧾 File name & extension
       let name = item.name || "file";
-      let ext = "pdf";
-
-      if (item.noteType) {
-        if (item.noteType.includes("/")) {
-          const mimeToExt = {
-            "application/pdf": "pdf",
-            "image/jpeg": "jpg",
-            "image/png": "png",
-            "text/plain": "txt",
-          };
-          ext = mimeToExt[item.noteType] || "bin";
-        } else {
-          ext = item.noteType;
-        }
-      }
+      let noteType = item.noteType;
+      let ext = getExtensionName(url) || "pdf";
 
       name = name
         .replace(/[/\\?%*:|"<>.]/g, "_")
@@ -90,17 +91,16 @@ const NotesScreen = () => {
       // 🕒 1️⃣ Download using expo/fetch
       const startDownload = Date.now();
 
-      const response = await fetch(item.noteUrl);
+      // 1️⃣ Using Fetch
+      const response = await fetch(url);
       if (!response.ok)
         throw new Error(`HTTP error! Status: ${response.status}`);
+      console.log("Response:");
+      console.log(response);
+      cacheFile = new File(Paths.cache, filename);
+      await cacheFile.write(await response.bytes());
 
-      // Save to cache using expo-file-system
-      const cacheUri = `${FileSystem.cacheDirectory}${filename}`;
-      const file = await FileSystem.writeAsStringAsync(
-        cacheUri,
-        await response.text(),
-        { encoding: FileSystem.EncodingType.Base64 }
-      );
+      const cacheUri = cacheFile.uri;
 
       const endDownload = Date.now();
       console.log(
@@ -129,7 +129,7 @@ const NotesScreen = () => {
         const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
           graderUri,
           filename,
-          item.noteType || "application/pdf"
+          noteType || "application/pdf"
         );
         const endCreate = Date.now();
         console.log(
@@ -140,9 +140,7 @@ const NotesScreen = () => {
 
         // 🕒 4️⃣ Read cache file
         const startRead = Date.now();
-        const base64 = await FileSystem.readAsStringAsync(cacheUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+        const cacheFileBytes = await cacheFile.bytes();
         const endRead = Date.now();
         console.log(
           `📖 Reading cache file took: ${((endRead - startRead) / 1000).toFixed(
@@ -152,9 +150,8 @@ const NotesScreen = () => {
 
         // 🕒 5️⃣ Write to SAF destination
         const startWrite = Date.now();
-        await FileSystem.writeAsStringAsync(newUri, base64, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+        const file = new File(newUri);
+        file.write(cacheFileBytes);
         const endWrite = Date.now();
         console.log(
           `✍️ Writing to destination took: ${(
@@ -168,7 +165,7 @@ const NotesScreen = () => {
         // 🧭 iOS / Web
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(cacheUri, {
-            mimeType: item.noteType || "application/pdf",
+            mimeType: noteType || "application/pdf",
           });
         } else {
           Alert.alert("Downloaded ✅", `Saved to app cache: ${cacheUri}`);
@@ -177,248 +174,38 @@ const NotesScreen = () => {
     } catch (error) {
       console.error("❌ Download error:", error);
       Alert.alert("Error ❌", error.message || "Could not save to folder.");
-    }
+    } finally {
+      // 🧹 Always clean up cache
+      if (cacheFile) {
+        try {
+          const startDelete = Date.now();
+          await cacheFile.delete();
+          const endDelete = Date.now();
+          console.log(
+            `🧹 Cache deletion took: ${(
+              (endDelete - startDelete) /
+              1000
+            ).toFixed(2)}s`
+          );
+        } catch (e) {
+          console.warn("⚠️ Failed to delete cache file:", e.message);
+        }
+      }
 
-    dispatch(setNote({ name: "loading", value: false }));
-    const endTotal = Date.now();
-    console.log(
-      `✅ Total time: ${((endTotal - startTotal) / 1000).toFixed(2)}s`
+      dispatch(setNote({ name: "loading", value: false }));
+
+      const endTotal = Date.now();
+      console.log(
+        `✅ Total time: ${((endTotal - startTotal) / 1000).toFixed(2)}s`
+      );
+    }
+    dispatch(
+      setStudent({
+        name: "loaderText",
+        value: "",
+      })
     );
   };
-
-  // const handleDownload = async (item, subject) => {
-  //   const startTotal = Date.now();
-  //   dispatch(setNote({ name: "loading", value: true }));
-
-  //   try {
-  //     if (!item || !item.noteUrl) {
-  //       Alert.alert("Error", "File URL not found.");
-  //       return;
-  //     }
-
-  //     // 🧾 File name & extension
-  //     let name = item.name || "file";
-  //     let ext = "pdf";
-
-  //     if (item.noteType) {
-  //       if (item.noteType.includes("/")) {
-  //         const mimeToExt = {
-  //           "application/pdf": "pdf",
-  //           "image/jpeg": "jpg",
-  //           "image/png": "png",
-  //           "text/plain": "txt",
-  //         };
-  //         ext = mimeToExt[item.noteType] || "bin";
-  //       } else {
-  //         ext = item.noteType;
-  //       }
-  //     }
-
-  //     name = name
-  //       .replace(/[/\\?%*:|"<>.]/g, "_")
-  //       .trim()
-  //       .replace(/\s+/g, "_");
-
-  //     const filename = `${name}.${ext}`;
-  //     const url = item.noteUrl;
-  //     const subjectName = subject.name;
-
-  //     console.log(`📘 Downloading for subject: ${subjectName}`);
-
-  //     // 🕒 1️⃣ Download into cache
-  //     const startDownload = Date.now();
-  //     const cacheDir = new Directory(Paths.cache);
-  //     const downloadedFile = await File.downloadFileAsync(url, cacheDir, {
-  //       idempotent: true,
-  //     });
-  //     const uri = downloadedFile.uri;
-  //     const endDownload = Date.now();
-  //     console.log(
-  //       `⏱️ Download took: ${((endDownload - startDownload) / 1000).toFixed(
-  //         2
-  //       )}s`
-  //     );
-
-  //     // 🧭 Android: Save to Grader folder
-  //     if (Platform.OS === "android") {
-  //       console.log("📂 Platform: Android");
-
-  //       // 🕒 2️⃣ Folder selection / creation
-  //       const startPicker = Date.now();
-  //       const graderUri = await getGraderFolderUri(["Notes", subjectName]);
-  //       const endPicker = Date.now();
-  //       console.log(
-  //         `📁 Folder setup took: ${((endPicker - startPicker) / 1000).toFixed(
-  //           2
-  //         )}s`
-  //       );
-  //       console.log(`📍 Final destination URI: ${graderUri}`);
-
-  //       // 🕒 3️⃣ File creation
-  //       const startCreate = Date.now();
-  //       const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
-  //         graderUri,
-  //         filename,
-  //         item.noteType || "application/pdf"
-  //       );
-  //       const endCreate = Date.now();
-  //       console.log(
-  //         `📄 File creation took: ${((endCreate - startCreate) / 1000).toFixed(
-  //           2
-  //         )}s`
-  //       );
-
-  //       // 🕒 4️⃣ Read from cache
-  //       const startRead = Date.now();
-  //       const base64 = await FileSystem.readAsStringAsync(uri, {
-  //         encoding: FileSystem.EncodingType.Base64,
-  //       });
-  //       const endRead = Date.now();
-  //       console.log(
-  //         `📖 Reading cache file took: ${((endRead - startRead) / 1000).toFixed(
-  //           2
-  //         )}s`
-  //       );
-
-  //       // 🕒 5️⃣ Write to SAF destination
-  //       const startWrite = Date.now();
-  //       await FileSystem.writeAsStringAsync(newUri, base64, {
-  //         encoding: FileSystem.EncodingType.Base64,
-  //       });
-  //       const endWrite = Date.now();
-  //       console.log(
-  //         `✍️ Writing to destination took: ${(
-  //           (endWrite - startWrite) /
-  //           1000
-  //         ).toFixed(2)}s`
-  //       );
-
-  //       Alert.alert("Success ✅", "File saved to Grader folder");
-  //     } else {
-  //       // 🧭 iOS / Web
-  //       if (await Sharing.isAvailableAsync()) {
-  //         await Sharing.shareAsync(uri, {
-  //           mimeType: item.noteType || "application/pdf",
-  //         });
-  //       } else {
-  //         Alert.alert("Downloaded ✅", `Saved to app cache: ${uri}`);
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("❌ Android save error:", error);
-  //     Alert.alert("Error ❌", "Could not save to Downloads folder.");
-  //   }
-
-  //   dispatch(setNote({ name: "loading", value: false }));
-  //   const endTotal = Date.now();
-  //   console.log(
-  //     `✅ Total time: ${((endTotal - startTotal) / 1000).toFixed(2)}s`
-  //   );
-  // };
-
-  // const handleDownload = async (item, subject) => {
-  //   const startTotal = Date.now();
-  //   dispatch(setNote({ name: "loading", value: true }));
-
-  //   try {
-  //     if (!item?.noteUrl) {
-  //       Alert.alert("Error", "File URL not found.");
-  //       return;
-  //     }
-
-  //     let name = item.name || "file";
-  //     let ext = "pdf";
-  //     if (item.noteType?.includes("/")) {
-  //       const mimeToExt = {
-  //         "application/pdf": "pdf",
-  //         "image/jpeg": "jpg",
-  //         "image/png": "png",
-  //         "text/plain": "txt",
-  //       };
-  //       ext = mimeToExt[item.noteType] || "bin";
-  //     }
-
-  //     name = name
-  //       .replace(/[/\\?%*:|"<>.]/g, "_")
-  //       .trim()
-  //       .replace(/\s+/g, "_");
-  //     const filename = `${name}.${ext}`;
-  //     const subjectName = subject.name;
-
-  //     console.log(`📘 Downloading for subject: ${subjectName}`);
-
-  //     // 🕒 1️⃣ Download using expo/fetch (binary-safe)
-  //     const startDownload = Date.now();
-  //     const response = await fetch(item.noteUrl);
-
-  //     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-  //     const blob = await response.blob();
-  //     const buffer = await blob.arrayBuffer();
-  //     const base64 = Buffer.from(buffer).toString("base64");
-
-  //     // write to cache
-  //     const cacheUri = `${FileSystem.cacheDirectory}${filename}`;
-  //     await FileSystem.writeAsStringAsync(cacheUri, base64, {
-  //       encoding: FileSystem.EncodingType.Base64,
-  //     });
-  //     const endDownload = Date.now();
-  //     console.log(
-  //       `⏱️ Download took: ${((endDownload - startDownload) / 1000).toFixed(
-  //         2
-  //       )}s`
-  //     );
-
-  //     // 🧭 Save to Android folder
-  //     if (Platform.OS === "android") {
-  //       const startPicker = Date.now();
-  //       const graderUri = await getGraderFolderUri(["Notes", subjectName]);
-  //       const endPicker = Date.now();
-  //       console.log(
-  //         `📁 Folder setup took: ${((endPicker - startPicker) / 1000).toFixed(
-  //           2
-  //         )}s`
-  //       );
-
-  //       const startCreate = Date.now();
-  //       const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
-  //         graderUri,
-  //         filename,
-  //         item.noteType || "application/pdf"
-  //       );
-  //       const endCreate = Date.now();
-  //       console.log(
-  //         `📄 File creation took: ${((endCreate - startCreate) / 1000).toFixed(
-  //           2
-  //         )}s`
-  //       );
-
-  //       const startWrite = Date.now();
-  //       await FileSystem.writeAsStringAsync(newUri, base64, {
-  //         encoding: FileSystem.EncodingType.Base64,
-  //       });
-  //       const endWrite = Date.now();
-  //       console.log(
-  //         `✍️ Writing took: ${((endWrite - startWrite) / 1000).toFixed(2)}s`
-  //       );
-
-  //       Alert.alert("Success ✅", "File saved to Grader folder");
-  //     } else {
-  //       await Sharing.shareAsync(cacheUri, {
-  //         mimeType: item.noteType || "application/pdf",
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.error("❌ Download error:", error);
-  //     Alert.alert("Error ❌", error.message);
-  //   }
-
-  //   dispatch(setNote({ name: "loading", value: false }));
-  //   const endTotal = Date.now();
-  //   console.log(
-  //     `✅ Total time: ${((endTotal - startTotal) / 1000).toFixed(2)}s`
-  //   );
-  // };
 
   useEffect(() => {
     (async () => {
@@ -458,7 +245,16 @@ const NotesScreen = () => {
         <Text style={styles.itemName}>{item?.name || "Unnamed"}</Text>
       </View>
       <TouchableOpacity
-        onPress={() => handleDownload(item, selectedSubject)}
+        onPress={() =>
+          handleDownload(
+            {
+              ...item,
+              noteUrl:
+                "https://fastly.picsum.photos/id/432/200/300.jpg?hmac=S0muAtaN6T0PXbBlf5O-UL0chTPM6i9FReOIs0IJlDU",
+            },
+            selectedSubject
+          )
+        }
         style={{
           backgroundColor: Colors.primary,
           color: Colors.tertiary,

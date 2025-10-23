@@ -38,7 +38,7 @@ const StudentResultScreen = () => {
 
   const onChange = async (name, value) => {
     dispatch(setMarks({ name, value }));
-    const examId = value._id;
+    const examId = value?._id;
     await dispatch(getStudentExams({ examId }));
   };
   const columnStyles = {
@@ -66,7 +66,7 @@ const StudentResultScreen = () => {
           items={allExams.map((exam) => ({
             label: exam.name,
             value: exam,
-            key: exam._id,
+            key: exam?._id,
           }))}
           style={{
             inputIOS: styles.picker,

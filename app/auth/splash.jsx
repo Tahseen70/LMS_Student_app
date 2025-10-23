@@ -30,6 +30,7 @@ const OnboardingScreen = () => {
   const radiusAnim = useRef(new Animated.Value(0)).current;
   const [isFocusSchool, setIsFocusSchool] = useState(false);
   const [isFocusCampus, setIsFocusCampus] = useState(false);
+  const [hasCache, setHasCache] = useState(false);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -60,21 +61,26 @@ const OnboardingScreen = () => {
 
   useEffect(() => {
     (async () => {
-      await dispatch(getAllschools());
-      await Asset.loadAsync(assetImages);
-      await Font.loadAsync(Ionicons.font);
-      Animated.parallel([
-        Animated.timing(heightAnim, {
-          toValue: screenHeight * 0.35,
-          duration: 800,
-          useNativeDriver: false,
-        }),
-        Animated.timing(radiusAnim, {
-          toValue: 30, // final radius
-          duration: 800,
-          useNativeDriver: false,
-        }),
-      ]).start();
+      try {
+        await dispatch(getAllschools());
+        await Asset.loadAsync(assetImages);
+        await Font.loadAsync(Ionicons.font);
+
+        Animated.parallel([
+          Animated.timing(heightAnim, {
+            toValue: screenHeight * 0.35,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+          Animated.timing(radiusAnim, {
+            toValue: 30, // final radius
+            duration: 800,
+            useNativeDriver: false,
+          }),
+        ]).start();
+      } catch (error) {
+        console.log(error);
+      }
     })();
   }, []);
 
@@ -211,7 +217,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.tertiary,
   },
   headerWrapper: {
-    position: "absolute",
+    position: "relative",
     top: 0,
     left: 0,
     right: 0,
@@ -221,12 +227,13 @@ const styles = StyleSheet.create({
   },
   header: {
     flex: 1,
+    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
   },
   card: {
     flex: 1,
-    marginTop: screenHeight * 0.4,
+    marginTop: 20,
     padding: 20,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -255,6 +262,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 180,
+    height: 180,
     resizeMode: "contain",
   },
   placeholderStyle: {

@@ -9,7 +9,7 @@ import Colors from "../../styles/Colors";
 
 const TeacherLayout = () => {
   const Student = useSelector((state) => state.Student);
-  const { student } = Student;
+  const { student, loaderText } = Student;
   const insets = useSafeAreaInsets();
   const globalLoading = useSelector((state) =>
     // check every slice in the state tree:
@@ -22,7 +22,7 @@ const TeacherLayout = () => {
 
   return (
     <Fragment>
-      <Loader loading={globalLoading} />
+      <Loader loading={globalLoading} loaderText={loaderText} />
       <Tabs
         screenOptions={{
           headerShown: false,
