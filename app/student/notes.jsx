@@ -61,7 +61,6 @@ const NotesScreen = () => {
         value: "Please Wait...Downloading File",
       })
     );
-    const startTotal = Date.now();
     dispatch(setNote({ name: "loading", value: true }));
 
     let cacheFile = null;
@@ -86,79 +85,32 @@ const NotesScreen = () => {
       const filename = `${name}.${ext}`;
       const subjectName = subject.name;
 
-      console.log(`📘 Downloading for subject: ${subjectName}`);
-
-      // 🕒 1️⃣ Download using expo/fetch
-      const startDownload = Date.now();
-
       // 1️⃣ Using Fetch
       const response = await fetch(url);
       if (!response.ok)
         throw new Error(`HTTP error! Status: ${response.status}`);
-      console.log("Response:");
-      console.log(response);
       cacheFile = new File(Paths.cache, filename);
       await cacheFile.write(await response.bytes());
-
       const cacheUri = cacheFile.uri;
-
-      const endDownload = Date.now();
-      console.log(
-        `⏱️ Download took: ${((endDownload - startDownload) / 1000).toFixed(
-          2
-        )}s`
-      );
 
       // 🧭 Android: Save to Grader folder
       if (Platform.OS === "android") {
-        console.log("📂 Platform: Android");
-
         // 🕒 2️⃣ Folder selection / creation
-        const startPicker = Date.now();
         const graderUri = await getGraderFolderUri(["Notes", subjectName]);
-        const endPicker = Date.now();
-        console.log(
-          `📁 Folder setup took: ${((endPicker - startPicker) / 1000).toFixed(
-            2
-          )}s`
-        );
-        console.log(`📍 Final destination URI: ${graderUri}`);
 
         // 🕒 3️⃣ File creation
-        const startCreate = Date.now();
         const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
           graderUri,
           filename,
           noteType || "application/pdf"
         );
-        const endCreate = Date.now();
-        console.log(
-          `📄 File creation took: ${((endCreate - startCreate) / 1000).toFixed(
-            2
-          )}s`
-        );
 
         // 🕒 4️⃣ Read cache file
-        const startRead = Date.now();
         const cacheFileBytes = await cacheFile.bytes();
-        const endRead = Date.now();
-        console.log(
-          `📖 Reading cache file took: ${((endRead - startRead) / 1000).toFixed(
-            2
-          )}s`
-        );
 
         // 🕒 5️⃣ Write to SAF destination
-        const startWrite = Date.now();
         const file = new File(newUri);
         file.write(cacheFileBytes);
-        const endWrite = Date.now();
-        console.log(
-          `✍️ Writing to destination took: ${(
-            (endWrite - startWrite) /
-            1000
-          ).toFixed(2)}s`
-        );
 
         Alert.alert("Success ✅", "File saved to Grader folder");
       } else {
@@ -178,26 +130,13 @@ const NotesScreen = () => {
       // 🧹 Always clean up cache
       if (cacheFile) {
         try {
-          const startDelete = Date.now();
           await cacheFile.delete();
-          const endDelete = Date.now();
-          console.log(
-            `🧹 Cache deletion took: ${(
-              (endDelete - startDelete) /
-              1000
-            ).toFixed(2)}s`
-          );
         } catch (e) {
           console.warn("⚠️ Failed to delete cache file:", e.message);
         }
       }
 
       dispatch(setNote({ name: "loading", value: false }));
-
-      const endTotal = Date.now();
-      console.log(
-        `✅ Total time: ${((endTotal - startTotal) / 1000).toFixed(2)}s`
-      );
     }
     dispatch(
       setStudent({

@@ -18,7 +18,7 @@ const TeacherLayout = () => {
     )
   );
   // Redirect to login if user is not authenticated
-  if (!student) return <Redirect href="/auth/splash" />;
+  if (!student) return <Redirect href="/auth/login" />;
 
   return (
     <Fragment>

@@ -2,11 +2,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { decode, encode } from "base-64";
 import Constants from "expo-constants";
 import * as FileSystem from "expo-file-system/legacy";
-import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
 import moment from "moment";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { Alert, Platform } from "react-native";
+import { File, Paths } from "expo-file-system";
 const APP_NAME = Constants.expoConfig?.name;
 
 // Polyfill first
@@ -19,7 +18,6 @@ if (!global.atob) {
 
 // now it's safe to import jsPDF
 import { jsPDF } from "jspdf";
-import { File, Paths } from "expo-file-system";
 
 // ✅ wrap baseUri usage in a validator
 const getBaseUri = async () => {
@@ -105,41 +103,7 @@ const formatNumber = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
-async function createDummyPDF() {
-  try {
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission required", "Please allow storage access.");
-      return;
-    }
 
-    const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const page = pdfDoc.addPage([600, 400]);
-    page.drawText("Hello from pdf-lib!", {
-      x: 50,
-      y: 350,
-      size: 24,
-      font,
-      color: rgb(0, 0.53, 0.71),
-    });
-
-    // 👇 directly get base64 from pdf-lib
-    const base64 = await pdfDoc.saveAsBase64();
-    const fileUri = `${FileSystem.cacheDirectory}dummy_${Date.now()}.pdf`;
-
-    await FileSystem.writeAsStringAsync(fileUri, base64, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-    await MediaLibrary.saveToLibraryAsync(fileUri);
-    Alert.alert("✅ PDF Created", "Dummy PDF saved to gallery.");
-    return fileUri;
-  } catch (err) {
-    console.error("Dummy PDF Error:", err);
-    Alert.alert("❌ Error", "Could not create dummy PDF");
-  }
-}
 
 const getImageBase64 = async (url) => {
   // download to a temp file
@@ -562,7 +526,6 @@ const getExtensionName = (url) => {
 export {
   assetImages,
   BASE_URL,
-  createDummyPDF,
   formatCNIC,
   formatNumber,
   generateChallan,

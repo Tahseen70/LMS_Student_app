@@ -2,7 +2,7 @@
   "expo": {
     "name": "Grader",
     "slug": "grader-lms-app",
-    "version": "1.0.0",
+    "version": "3.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "graderlmsappstudent",
@@ -13,6 +13,7 @@
       "bundleIdentifier": "com.anonymous.graderlmsapp.student"
     },
     "android": {
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1975C0"

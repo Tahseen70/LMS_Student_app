@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
@@ -102,11 +102,22 @@ const FeeScreen = () => {
   }, [dispatch]);
 
   const DownloadChallan = async () => {
+    dispatch(
+      setStudent({
+        name: "loaderText",
+        value: "Please Wait...Downloading File",
+      })
+    );
     dispatch(setStudent({ name: "loading", value: true }));
     const campusStr = await AsyncStorage.getItem("school");
     await generateChallan(fee, bank, campusStr);
     dispatch(setStudent({ name: "loading", value: false }));
-    // await createDummyPDF();
+    dispatch(
+      setStudent({
+        name: "loaderText",
+        value: "",
+      })
+    );
   };
 
   return (

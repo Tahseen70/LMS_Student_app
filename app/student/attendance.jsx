@@ -67,7 +67,7 @@ const StudentAttendanceScreen = () => {
 
   const onMonthChange = (month) => {
     const m = moment(month);
-    const date = m.clone().startOf("month").format("YYYY-MM-DD");
+    const date = m.clone().startOf("month").format("YYYY-MM-D");
     dispatch(getAttendanceByMonth({ date }));
     dispatch(getAttendanceStatsByMonth({ date }));
     setSelectedMonth(month); // also keep Date object here
@@ -76,7 +76,7 @@ const StudentAttendanceScreen = () => {
   useEffect(() => {
     const now = new Date();
     const m = moment(now);
-    const date = m.clone().startOf("month").format("YYYY-MM-DD");
+    const date = m.clone().startOf("month").format("YYYY-MM-D");
     dispatch(getAttendanceByMonth({ date }));
     dispatch(getAttendanceStatsByMonth({ date }));
     setSelectedMonth(now); // keep Date object!

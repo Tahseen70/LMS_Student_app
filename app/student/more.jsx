@@ -28,9 +28,8 @@ const More = () => {
   const router = useRouter();
   const Student = useSelector((state) => state.Student);
   const { student } = Student;
-
-  const [schoolName, setSchoolName] = useState("");
-  const [campusName, setCampusName] = useState("");
+  const schoolName = student?.school?.name || "";
+  const campusName = student?.campus?.name || "";
 
   const profileUrl = student?.profileUrl
     ? { uri: student.profileUrl }
@@ -40,7 +39,7 @@ const More = () => {
 
   const logout = () => {
     dispatch(resetState());
-    router.replace("/auth/splash");
+    router.replace("/auth/login");
   };
 
   const setUpdateEmail = async () => {
@@ -56,21 +55,6 @@ const More = () => {
     text: Colors.quaternary,
     card: hexToRgba(Colors.tertiaryDark, 0.3),
   };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const campusStr = await AsyncStorage.getItem("school");
-        if (campusStr) {
-          const campusObj = JSON.parse(campusStr);
-          setSchoolName(campusObj?.school?.name || "");
-          setCampusName(campusObj?.name || "");
-        }
-      } catch (error) {
-        console.log("Error fetching school from storage:", error);
-      }
-    })();
-  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>

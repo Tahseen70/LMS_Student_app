@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  Dimensions,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -25,7 +26,7 @@ import { setStudent } from "../../redux/slices/studentSlice";
 import { resetUpdatePassword } from "../../redux/slices/teacherSlice";
 import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
-
+const { height: screenHeight } = Dimensions.get("screen");
 const LoginScreen = () => {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -40,6 +41,10 @@ const LoginScreen = () => {
   const [hasBiometric, setHasBiometric] = useState(false);
   const [biometricType, setBiometricType] = useState(0);
   const passwordRef = useRef(null);
+  const heightAnim = useRef(new Animated.Value(screenHeight)).current;
+  const radiusAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const translateYAnim = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
     (async () => {
@@ -73,36 +78,30 @@ const LoginScreen = () => {
 
         if (student) router.replace("/student/home");
 
-        const campus = await AsyncStorage.getItem("school");
-
-        if (campus && !selectedSchool) {
-          let parsedCampus = null;
-          try {
-            parsedCampus = JSON.parse(campus);
-          } catch (err) {
-            console.warn("Invalid campus JSON:", campus);
-          }
-
-          if (parsedCampus) {
-            const currentSchool = parsedCampus.school;
-
-            if (currentSchool) {
-              dispatch(
-                setSchool({
-                  name: "selectedSchool",
-                  value: currentSchool,
-                })
-              );
-            }
-
-            dispatch(
-              setSchool({
-                name: "selectedCampus",
-                value: parsedCampus,
-              })
-            );
-          }
-        }
+        Animated.parallel([
+          Animated.timing(heightAnim, {
+            toValue: screenHeight * 0.35,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+          Animated.timing(radiusAnim, {
+            toValue: 30, // final radius
+            duration: 800,
+            useNativeDriver: false,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 800,
+            delay: 100,
+            useNativeDriver: true, // ✅ REQUIRED for opacity
+          }),
+          Animated.timing(translateYAnim, {
+            toValue: 0,
+            duration: 800,
+            delay: 100,
+            useNativeDriver: true,
+          }),
+        ]).start();
       } catch (e) {
         console.error("Error checking token", e);
       }
@@ -191,11 +190,6 @@ const LoginScreen = () => {
     dispatch(setStudent({ name, value }));
   };
 
-  const onCloseClick = async () => {
-    await AsyncStorage.clear();
-    router.replace("/auth/splash");
-  };
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -212,28 +206,37 @@ const LoginScreen = () => {
             height: "100%",
           }}
         >
-          <View style={styles.header}>
+          <Animated.View
+            style={[
+              styles.header,
+              {
+                height: heightAnim,
+                borderBottomLeftRadius: radiusAnim,
+                borderBottomRightRadius: radiusAnim,
+              },
+            ]}
+          >
             <View style={styles.logoWrapper}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={onCloseClick}
-              >
-                <View style={styles.closeCircle}>
-                  <Ionicons name="close" size={20} color={Colors.tertiary} />
-                </View>
-              </TouchableOpacity>
               <Image
                 source={
                   selectedSchool?.logoUrl
                     ? { uri: selectedSchool.logoWhiteUrl }
-                    : require("../../assets/Logo_White.png")
+                    : require("../../assets/logo_round_white.png")
                 }
                 style={styles.logo}
               />
             </View>
-          </View>
+          </Animated.View>
 
-          <View style={styles.card}>
+          <Animated.View
+            style={[
+              styles.card,
+              {
+                opacity: opacityAnim,
+                transform: [{ translateY: translateYAnim }],
+              },
+            ]}
+          >
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Enter your details below</Text>
 
@@ -329,7 +332,7 @@ const LoginScreen = () => {
                 )}
               </TouchableOpacity>
             )}
-          </View>
+          </Animated.View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -341,11 +344,14 @@ export default LoginScreen;
 const styles = StyleSheet.create({
   ...ContainerStyles,
   header: {
-    height: "35%",
+    position: "relative",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
+    height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
     backgroundColor: Colors.primary,
   },
   logoWrapper: {
@@ -389,6 +395,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 1 },
+    zIndex: 3,
   },
   title: {
     fontSize: 22,

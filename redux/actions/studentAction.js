@@ -78,9 +78,7 @@ export const getStudentFee = createAsyncThunk(
   async ({ month }, thunkAPI) => {
     try {
       let params = { month };
-      console.log({ month });
       let resp = await Axios.get("/fee/student/month", { params });
-      console.log(resp.data);
       return resp.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(

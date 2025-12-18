@@ -48,25 +48,6 @@ const dashboardItems = [
 
 const Home = () => {
   const router = useRouter();
-  // Local state for school/campus from AsyncStorage
-  const [schoolName, setSchoolName] = useState("");
-  const [campusName, setCampusName] = useState("");
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const campusStr = await AsyncStorage.getItem("school");
-        if (campusStr) {
-          const campusObj = JSON.parse(campusStr);
-          setSchoolName(campusObj?.school?.name || "");
-          setCampusName(campusObj?.name || "");
-        }
-      } catch (error) {
-        console.log("Error fetching school from storage:", error);
-      }
-    })();
-  }, []);
-
   // Close App on Hardware Back Button Press
   useFocusEffect(
     useCallback(() => {
@@ -134,6 +115,8 @@ const Home = () => {
     ? require("../../assets/user_male.png")
     : require("../../assets/user_female.png");
   const studentName = student.name;
+  const schoolName = student?.school?.name || "";
+  const campusName = student?.campus?.name || "";
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.tertiaryLight }}>

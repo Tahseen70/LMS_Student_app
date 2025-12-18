@@ -7,18 +7,7 @@ const Axios = axios.create();
 Axios.interceptors.request.use(
   async (config) => {
     try {
-      let serverUrl = "http://localhost:8080"; // fallback
-      const schoolStr = await AsyncStorage.getItem("school");
-      if (schoolStr) {
-        try {
-          const parsedSchool = JSON.parse(schoolStr);
-          if (parsedSchool?.serverUrl) {
-            serverUrl = parsedSchool.serverUrl;
-          }
-        } catch (err) {
-          console.error("Error parsing school from AsyncStorage:", err);
-        }
-      }
+      let serverUrl = "https://server.graderlms.com/"; // fallback
 
       // Always set baseURL dynamically
       config.baseURL = `${serverUrl}/api`;
