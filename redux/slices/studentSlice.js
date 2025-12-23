@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { resetState } from "../actions/globalAction";
 import {
   getClassStudents,
+  getStudentDiary,
   getStudentFee,
   getStudentTimeTable,
   loginStudent,
@@ -26,6 +27,9 @@ const initialState = {
     newPassword: "",
     confirmPassword: "",
   },
+  // Diary
+  diaries: [],
+  diaryDate: new Date(),
 };
 
 const studentSlice = createSlice({
@@ -107,7 +111,18 @@ const studentSlice = createSlice({
       .addCase(getStudentFee.rejected, (state) => {
         state.loading = false;
       })
-
+      // Get Diary of Student
+      .addCase(getStudentDiary.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getStudentDiary.fulfilled, (state, action) => {
+        const data = action.payload.diaries;
+        state.diaries = data;
+        state.loading = false;
+      })
+      .addCase(getStudentDiary.rejected, (state, action) => {
+        state.loading = false;
+      })
       // RESET STATE
       .addCase(resetState, () => initialState);
   },

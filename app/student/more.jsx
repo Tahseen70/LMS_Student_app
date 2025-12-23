@@ -110,6 +110,11 @@ const More = () => {
               route: "/student/fees",
               icon: "card-outline",
             },
+            {
+              label: "Diary",
+              route: "/student/diary",
+              icon: "book-outline",
+            },
           ]}
         />
 

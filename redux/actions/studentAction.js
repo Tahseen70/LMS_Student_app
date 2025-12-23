@@ -87,3 +87,21 @@ export const getStudentFee = createAsyncThunk(
     }
   }
 );
+
+export const getStudentDiary = createAsyncThunk(
+  "student/getStudentDiary",
+  async ({ date }, thunkAPI) => {
+    try {
+      const params = {
+        date,
+      };
+
+      const resp = await Axios.get("/diary/student", { params });
+      return resp.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
