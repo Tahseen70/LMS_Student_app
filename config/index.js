@@ -103,8 +103,6 @@ const formatNumber = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
-
-
 const getImageBase64 = async (url) => {
   // download to a temp file
   const fileUri = FileSystem.cacheDirectory + `logo_${Date.now()}.png`;
@@ -118,7 +116,7 @@ const getImageBase64 = async (url) => {
   return base64; // only the base64 data, no data:image/png prefix
 };
 
-const generateChallan = async (fee, bank, campusStr) => {
+const generateChallan = async (fee, bank) => {
   try {
     // Helper to ensure jsPDF gets a string
     const safeText = (val) =>
@@ -157,13 +155,14 @@ const generateChallan = async (fee, bank, campusStr) => {
     const extraFeeAmount = formatNumber(fee.extraFeeAmount);
 
     // School & Campus
-    const campus = JSON.parse(campusStr); // Stored in Storage but named school
+    const campus = fee.campus;
     const campusName = campus.name;
-    const school = campus.school;
+    const school = fee.school;
     const schoolName = school.name;
     const schoolLogo = school.logoUrl;
     const schoolPhoneNumber = campus?.phoneNumber;
-    const logoBase64 = await getImageBase64(schoolLogo);
+    const pngUrl = schoolLogo.replace("/upload/", "/upload/f_png/"); // force cloudinary to serve image as PNG
+    const logoBase64 = await getImageBase64(pngUrl);
 
     // Bank
     const bankName = `${bank.name} Bank`;

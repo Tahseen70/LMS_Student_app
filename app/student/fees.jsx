@@ -109,8 +109,7 @@ const FeeScreen = () => {
       })
     );
     dispatch(setStudent({ name: "loading", value: true }));
-    const campusStr = await AsyncStorage.getItem("school");
-    await generateChallan(fee, bank, campusStr);
+    await generateChallan(fee, bank);
     dispatch(setStudent({ name: "loading", value: false }));
     dispatch(
       setStudent({

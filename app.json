@@ -2,7 +2,7 @@
   "expo": {
     "name": "Grader",
     "slug": "grader-lms-app",
-    "version": "3.0.0",
+    "version": "7.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "graderlmsappstudent",
@@ -13,22 +13,13 @@
       "bundleIdentifier": "com.anonymous.graderlmsapp.student"
     },
     "android": {
-      "versionCode": 3,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1975C0"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.graderlmsapp.student",
-      "permissions": [
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-        "android.permission.ACCESS_MEDIA_LOCATION",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_MEDIA_VIDEO",
-        "android.permission.READ_MEDIA_AUDIO"
-      ]
+      "package": "com.anonymous.graderlmsapp.student"
     },
     "web": {
       "bundler": "metro",
@@ -44,14 +35,6 @@
           "imageWidth": 180,
           "resizeMode": "contain",
           "backgroundColor": "#1975C0"
-        }
-      ],
-      [
-        "expo-media-library",
-        {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
-          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
-          "isAccessMediaLocationEnabled": true
         }
       ],
       "expo-font",

@@ -29,6 +29,20 @@ import HeaderStyles from "../../styles/HeaderStyles";
 import { fetch } from "expo/fetch";
 import { setStudent } from "../../redux/slices/studentSlice";
 
+/* 🔔 NEW: Notifications & intent */
+import * as Notifications from "expo-notifications";
+import * as IntentLauncher from "expo-intent-launcher";
+import * as Sharing from "expo-sharing";
+
+/* 🔔 Notification config (required once) */
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 const NotesScreen = () => {
   const dispatch = useDispatch();
   const Note = useSelector((state) => state.Note);
@@ -43,6 +57,34 @@ const NotesScreen = () => {
 
   const [modalVisible, setModalVisible] = useState(false); // ✅ success modal state
 
+  /* 🔔 Listen for notification tap → open file (Android) */
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(
+      async (response) => {
+        const { fileUri, mimeType } =
+          response.notification.request.content.data || {};
+
+        if (Platform.OS === "android" && fileUri) {
+          try {
+            await IntentLauncher.startActivityAsync(
+              "android.intent.action.VIEW",
+              {
+                data: fileUri,
+                type: mimeType || "application/pdf",
+                flags: 1,
+              },
+            );
+          } catch (err) {
+            console.error("Failed to open file:", err);
+            Alert.alert("Error", "Unable to open downloaded file.");
+          }
+        }
+      },
+    );
+
+    return () => sub.remove();
+  }, []);
+
   const handleLoadMore = () => {
     if (loading || !notesHasMore || !selectedSubject?._id) return;
     dispatch(
@@ -50,16 +92,57 @@ const NotesScreen = () => {
         subjectId: selectedSubject._id,
         page: notesPage + 1,
         limit: 10,
-      })
+      }),
     );
   };
 
+  /* 🔔 Create notification channel (Android) */
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        sound: "default",
+      });
+    }
+  }, []);
+
+  /* 🔔 Request notification permissions */
+  useEffect(() => {
+    (async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      console.log("🔔 Notification permission:", status);
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Please enable notifications from system settings.",
+        );
+      }
+    })();
+  }, []);
+
+  /* 🔔 Trigger notification */
+  const triggerNotification = async () => {
+    console.log("📣 Triggering notification");
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Download Started",
+        body: "Your file download has started.",
+        data: {}, // can pass fileUri here later
+      },
+      trigger: { seconds: 1, channelId: "default" },
+    });
+    console.log("📣 Notification scheduled");
+  };
+
   const handleDownload = async (item, subject) => {
+    console.log(item);
     dispatch(
       setStudent({
         name: "loaderText",
         value: "Please Wait...Downloading File",
-      })
+      }),
     );
     dispatch(setNote({ name: "loading", value: true }));
 
@@ -75,6 +158,7 @@ const NotesScreen = () => {
       // 🧾 File name & extension
       let name = item.name || "file";
       let noteType = item.noteType;
+      console.log(url);
       let ext = getExtensionName(url) || "pdf";
 
       name = name
@@ -83,6 +167,9 @@ const NotesScreen = () => {
         .replace(/\s+/g, "_");
 
       const filename = `${name}.${ext}`;
+      console.log(name);
+      console.log(ext);
+      console.log(filename);
       const subjectName = subject.name;
 
       // 1️⃣ Using Fetch
@@ -102,7 +189,7 @@ const NotesScreen = () => {
         const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
           graderUri,
           filename,
-          noteType || "application/pdf"
+          noteType || "application/pdf",
         );
 
         // 🕒 4️⃣ Read cache file
@@ -142,7 +229,7 @@ const NotesScreen = () => {
       setStudent({
         name: "loaderText",
         value: "",
-      })
+      }),
     );
   };
 
@@ -156,7 +243,7 @@ const NotesScreen = () => {
         if (subjects.length > 0) {
           const firstSubject = subjects[0];
           dispatch(
-            setSubject({ name: "selectedSubject", value: firstSubject })
+            setSubject({ name: "selectedSubject", value: firstSubject }),
           );
           const subjectId = firstSubject._id;
           dispatch(getNotes({ subjectId, page: 1, limit: 10 }));
@@ -184,16 +271,7 @@ const NotesScreen = () => {
         <Text style={styles.itemName}>{item?.name || "Unnamed"}</Text>
       </View>
       <TouchableOpacity
-        onPress={() =>
-          handleDownload(
-            {
-              ...item,
-              noteUrl:
-                "https://fastly.picsum.photos/id/432/200/300.jpg?hmac=S0muAtaN6T0PXbBlf5O-UL0chTPM6i9FReOIs0IJlDU",
-            },
-            selectedSubject
-          )
-        }
+        onPress={() => handleDownload(item, selectedSubject)}
         style={{
           backgroundColor: Colors.primary,
           color: Colors.tertiary,
