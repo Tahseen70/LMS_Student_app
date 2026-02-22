@@ -38,7 +38,10 @@ const Profile = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <PageHeader text="Profile" />
+      <PageHeader
+        text="Profile"
+        onBack={() => router.navigate("/student/more")}
+      />
 
       {/* Placeholder Message */}
       <ScrollView

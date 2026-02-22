@@ -123,13 +123,13 @@ const NotesScreen = () => {
   }, []);
 
   /* 🔔 Trigger notification */
-  const triggerNotification = async () => {
-    console.log("📣 Triggering notification");
+  const triggerNotification = async (filename, fileUri, mimeType) => {
+    console.log("📣 Triggering notification for:", filename);
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Download Started",
-        body: "Your file download has started.",
-        data: {}, // can pass fileUri here later
+        title: "Download Complete ✅",
+        body: `${filename} has been saved.`,
+        data: { fileUri, mimeType }, // can pass fileUri here later
       },
       trigger: { seconds: 1, channelId: "default" },
     });
@@ -200,6 +200,7 @@ const NotesScreen = () => {
         file.write(cacheFileBytes);
 
         Alert.alert("Success ✅", "File saved to Grader folder");
+        triggerNotification(filename, newUri, noteType || "application/pdf");
       } else {
         // 🧭 iOS / Web
         if (await Sharing.isAvailableAsync()) {
@@ -208,6 +209,7 @@ const NotesScreen = () => {
           });
         } else {
           Alert.alert("Downloaded ✅", `Saved to app cache: ${cacheUri}`);
+          triggerNotification(filename, cacheUri, noteType || "application/pdf");
         }
       }
     } catch (error) {

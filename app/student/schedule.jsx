@@ -97,7 +97,9 @@ const TeacherScheduleScreen = () => {
         {/* Header */}
         <PageHeader text="Weekly Schedule" />
 
-        {hasTimetable ? (
+        {loading ? (
+          <ListEmpty text={"Loading..."} />
+        ) : hasTimetable ? (
           <ScrollView
             horizontal
             nestedScrollEnabled
