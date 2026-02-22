@@ -2,7 +2,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   LayoutAnimation,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -10,6 +12,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+/* 🔔 NEW: Notifications & intent */
+import * as Notifications from "expo-notifications";
+import * as IntentLauncher from "expo-intent-launcher";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
@@ -30,6 +35,15 @@ const getMonths = (count = 12, offset = 0) => {
   }
   return months;
 };
+
+/* 🔔 Notification config (required once) */
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const FeeScreen = () => {
   const dispatch = useDispatch();
@@ -55,6 +69,71 @@ const FeeScreen = () => {
     isExpired = false,
     isFineWavedOff = false,
   } = fee || {};
+
+  /* 🔔 Listen for notification tap → open file (Android) */
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(
+      async (response) => {
+        const { fileUri, mimeType } =
+          response.notification.request.content.data || {};
+
+        if (Platform.OS === "android" && fileUri) {
+          try {
+            await IntentLauncher.startActivityAsync(
+              "android.intent.action.VIEW",
+              {
+                data: fileUri,
+                type: mimeType || "application/pdf",
+                flags: 1,
+              }
+            );
+          } catch (err) {
+            console.error("Failed to open file:", err);
+            Alert.alert("Error", "Unable to open downloaded file.");
+          }
+        }
+      }
+    );
+
+    return () => sub.remove();
+  }, []);
+
+  /* 🔔 Create notification channel (Android) */
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        sound: "default",
+      });
+    }
+  }, []);
+
+  /* 🔔 Request notification permissions */
+  useEffect(() => {
+    (async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Please enable notifications from system settings."
+        );
+      }
+    })();
+  }, []);
+
+  /* 🔔 Trigger notification */
+  const triggerNotification = async (filename, fileUri, mimeType) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Download Complete ✅",
+        body: `${filename} has been saved.`,
+        data: { fileUri, mimeType },
+      },
+      trigger: { seconds: 1, channelId: "default" },
+    });
+  };
 
   let netAmount = amount + extraFeeAmount + previousBalance + lmsFee;
   const isLateFee = new Date() > new Date(dueDate) && !isFineWavedOff;
@@ -109,7 +188,10 @@ const FeeScreen = () => {
       })
     );
     dispatch(setStudent({ name: "loading", value: true }));
-    await generateChallan(fee, bank);
+    const result = await generateChallan(fee, bank);
+    if (result) {
+      triggerNotification(result.filename, result.uri, result.type);
+    }
     dispatch(setStudent({ name: "loading", value: false }));
     dispatch(
       setStudent({

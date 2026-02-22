@@ -474,17 +474,22 @@ const generateChallan = async (fee, bank) => {
       file.write(bytes);
 
       Alert.alert("Success ✅", `PDF saved to ${APP_NAME} folder`);
+      return { uri: newUri, filename, type: "application/pdf" };
     } else {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(cacheUri, {
           mimeType: "application/pdf",
         });
+        return { uri: cacheUri, filename, type: "application/pdf" };
       } else {
-        Alert.alert("Downloaded ✅", `Saved to app cache: ${uri}`);
+        Alert.alert("Downloaded ✅", `Saved to app cache: ${cacheUri}`);
+        return { uri: cacheUri, filename, type: "application/pdf" };
       }
     }
   } catch (error) {
+    console.error("❌ Generate Challan Error:", error);
     Alert.alert("Error Occured ❌", `Could not generate Challan`);
+    return null;
   }
 };
 
