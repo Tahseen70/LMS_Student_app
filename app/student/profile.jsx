@@ -40,7 +40,6 @@ const Profile = () => {
       {/* Header */}
       <PageHeader
         text="Profile"
-        onBack={() => router.navigate("/student/more")}
       />
 
       {/* Placeholder Message */}

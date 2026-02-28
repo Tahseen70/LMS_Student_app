@@ -155,7 +155,7 @@ const Section = ({ title, items, colors }) => {
           style={[styles.itemButton, { backgroundColor: colors.card }]}
           onPress={() => {
             if (item.action) item.action();
-            if (item.route) router.push(item.route);
+            if (item.route) router.push({ pathname: item.route, params: { from: "more" } });
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>

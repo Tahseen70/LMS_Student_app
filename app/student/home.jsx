@@ -72,7 +72,7 @@ const Home = () => {
       key={item.id}
       activeOpacity={0.8}
       style={styles.card} // outer container
-      onPress={() => item.route && router.push(item.route)}
+      onPress={() => item.route && router.push({ pathname: item.route, params: { from: "home" } })}
     >
       <View
         style={styles.cardGradient} // outer gradient

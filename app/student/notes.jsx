@@ -71,7 +71,7 @@ const NotesScreen = () => {
               {
                 data: fileUri,
                 type: mimeType || "application/pdf",
-                flags: 1,
+                flags: 268435457, // FLAG_ACTIVITY_NEW_TASK | FLAG_GRANT_READ_URI_PERMISSION
               },
             );
           } catch (err) {
@@ -129,9 +129,10 @@ const NotesScreen = () => {
       content: {
         title: "Download Complete ✅",
         body: `${filename} has been saved.`,
-        data: { fileUri, mimeType }, // can pass fileUri here later
+        data: { fileUri, mimeType },
+        channelId: "default",
       },
-      trigger: { seconds: 1, channelId: "default" },
+      trigger: null, // immediate
     });
     console.log("📣 Notification scheduled");
   };
