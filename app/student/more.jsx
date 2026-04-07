@@ -34,8 +34,8 @@ const More = () => {
   const profileUrl = student?.profileUrl
     ? { uri: student.profileUrl }
     : student.isMale
-    ? require("../../assets/user_male.png")
-    : require("../../assets/user_female.png");
+      ? require("../../assets/user_male.png")
+      : require("../../assets/user_female.png");
 
   const logout = () => {
     dispatch(resetState());
@@ -115,6 +115,11 @@ const More = () => {
               route: "/student/diary",
               icon: "book-outline",
             },
+            {
+              label: "Course",
+              route: "/student/course",
+              icon: "book-outline",
+            },
           ]}
         />
 
@@ -155,7 +160,8 @@ const Section = ({ title, items, colors }) => {
           style={[styles.itemButton, { backgroundColor: colors.card }]}
           onPress={() => {
             if (item.action) item.action();
-            if (item.route) router.push({ pathname: item.route, params: { from: "more" } });
+            if (item.route)
+              router.push({ pathname: item.route, params: { from: "more" } });
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>

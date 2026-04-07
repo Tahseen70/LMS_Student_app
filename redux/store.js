@@ -6,6 +6,8 @@ import schoolSlice from "./slices/schoolSlice";
 import studentSlice from "./slices/studentSlice";
 import subjectSlice from "./slices/subjectSlice";
 import teacherSlice from "./slices/teacherSlice";
+import courseSlice from "./slices/courseSlice";
+import lessonSlice from "./slices/lessonSlice";
 
 // Combine your reducers
 const rootReducer = combineReducers({
@@ -16,6 +18,8 @@ const rootReducer = combineReducers({
   Marks: marksSlice,
   Subject: subjectSlice,
   Student: studentSlice,
+  Course: courseSlice,
+  Lesson: lessonSlice,
 });
 
 export const store = configureStore({

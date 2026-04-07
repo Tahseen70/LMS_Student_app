@@ -19,7 +19,8 @@
         "backgroundColor": "#1975C0"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.graderlmsapp.student"
+      "package": "com.anonymous.graderlmsapp.student",
+      "windowSecure": true
     },
     "web": {
       "bundler": "metro",

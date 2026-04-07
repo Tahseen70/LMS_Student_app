@@ -14,8 +14,8 @@ const TeacherLayout = () => {
   const globalLoading = useSelector((state) =>
     // check every slice in the state tree:
     Object.values(state).some(
-      (slice) => slice && typeof slice === "object" && slice.loading
-    )
+      (slice) => slice && typeof slice === "object" && slice.loading,
+    ),
   );
   // Redirect to login if user is not authenticated
   if (!student) return <Redirect href="/auth/login" />;
@@ -90,6 +90,8 @@ const TeacherLayout = () => {
         {/* Hidden Routes */}
         <Tabs.Screen name="fees" options={{ href: null }} />
         <Tabs.Screen name="diary" options={{ href: null }} />
+        <Tabs.Screen name="course" options={{ href: null }} />
+        <Tabs.Screen name="lesson" options={{ href: null }} />
         <Tabs.Screen name="notes" options={{ href: null }} />
         <Tabs.Screen name="schedule" options={{ href: null }} />
         <Tabs.Screen name="profile" options={{ href: null }} />
