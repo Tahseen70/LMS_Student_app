@@ -116,9 +116,9 @@ const More = () => {
               icon: "book-outline",
             },
             {
-              label: "Course",
+              label: "Courses",
               route: "/student/course",
-              icon: "book-outline",
+              icon: "videocam-outline",
             },
           ]}
         />

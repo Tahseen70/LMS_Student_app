@@ -1,14 +1,38 @@
 // VideoModal.js
 import React, { useState, useEffect } from "react";
-import { Modal, View, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
-import { Video } from "expo-av";
+import { Modal, View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "../styles/Colors";
 
 const VideoModal = ({ visible, videoUrl, onClose }) => {
-  const [videoRef, setVideoRef] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [dimensions, setDimensions] = useState(Dimensions.get("window"));
 
+  // Initialize the native expo-video player
+  const player = useVideoPlayer(videoUrl, (player) => {
+    player.loop = false;
+    player.play(); // Auto-play when modal opens
+  });
+
+  // Listen to player status
+  useEffect(() => {
+    if (!player) return;
+
+    const subscription = player.addListener('statusChange', ({ status }) => {
+      if (status === 'readyToPlay') {
+        setLoading(false);
+      } else if (status === 'loading') {
+        setLoading(true);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [player]);
+
+  // Adjust dimensions gracefully
   useEffect(() => {
     const subscription = Dimensions.addEventListener("change", ({ window }) => {
       setDimensions(window);
@@ -21,17 +45,36 @@ const VideoModal = ({ visible, videoUrl, onClose }) => {
 
   const { width, height } = dimensions;
 
+  // React Native Modal needs supportedOrientations to not restrict rotation if triggered
   return (
-    <Modal animationType="slide" transparent={true} visible={visible}>
+    <Modal 
+      animationType="slide" 
+      transparent={true} 
+      visible={visible}
+      supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
-        <Video
-          ref={(ref) => setVideoRef(ref)}
-          source={{ uri: videoUrl }}
-          style={{ width, height: width * (9 / 16) }} // 16:9 ratio
-          resizeMode="contain"
-          useNativeControls
-          shouldPlay
-        />
+        {loading && (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#ffffff" />
+            <Text style={styles.loadingText}>Please wait while the video is loading</Text>
+          </View>
+        )}
+
+        <View style={{ width, height: width * (9 / 16) }}>
+          <VideoView
+            player={player}
+            style={styles.video}
+            allowsFullscreen
+            allowsPictureInPicture
+            nativeControls
+            fullscreenOptions={{
+              enable: true,
+              orientation: 'landscape',
+            }}
+          />
+        </View>
 
         {/* Close Button */}
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -49,10 +92,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  video: {
+    width: "100%",
+    height: "100%",
+  },
   closeButton: {
     position: "absolute",
     top: 40,
     right: 20,
+    zIndex: 2,
+  },
+  loaderContainer: {
+    position: "absolute",
+    zIndex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    color: "#fff",
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
 

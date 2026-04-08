@@ -3,7 +3,7 @@
     "name": "Grader",
     "slug": "grader-lms-app",
     "version": "7.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "graderlmsappstudent",
     "userInterfaceStyle": "automatic",
@@ -41,7 +41,8 @@
       "expo-font",
       "expo-web-browser",
       "expo-asset",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-video"
     ],
     "extra": {
       "router": {},

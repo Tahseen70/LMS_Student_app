@@ -7,8 +7,8 @@ const Axios = axios.create();
 Axios.interceptors.request.use(
   async (config) => {
     try {
-      // let serverUrl = "https://server.graderlms.com";
-      let serverUrl = "https://d204-2407-d000-11-e15-bfbd-f12-7848-c917.ngrok-free.app";
+      let serverUrl = "https://server.graderlms.com";
+      // let serverUrl = "https://d204-2407-d000-11-e15-bfbd-f12-7848-c917.ngrok-free.app";
 
       // Always set baseURL dynamically
       config.baseURL = `${serverUrl}/api`;

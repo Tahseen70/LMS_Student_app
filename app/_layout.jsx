@@ -8,9 +8,14 @@ import {
 } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { store } from "../redux/store";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 const RootLayout = () => {
   useEffect(() => {
+    // Lock the global app orientation to Portrait, 
+    // since we unlocked the OS-level orientation to allow Video landscape
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+
     if (Platform.OS === "android") {
       const applyNavConfig = async () => {
         try {
