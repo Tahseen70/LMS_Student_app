@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { usePreventScreenCapture } from "expo-screen-capture";
 
 const VideoPlayer = ({ url, setLoaded, style }) => {
   const [loading, setLoading] = useState(true);
+
+  // Prevent screenshots and screen recording while this component is mounted
+  usePreventScreenCapture();
 
   // Initialize the new, better expo-video player
   const player = useVideoPlayer(url, (player) => {

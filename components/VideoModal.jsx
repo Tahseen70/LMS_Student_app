@@ -2,12 +2,16 @@
 import React, { useState, useEffect } from "react";
 import { Modal, View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { usePreventScreenCapture } from "expo-screen-capture";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "../styles/Colors";
 
 const VideoModal = ({ visible, videoUrl, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [dimensions, setDimensions] = useState(Dimensions.get("window"));
+
+  // Prevent screenshots and screen recording while this modal is mounted
+  usePreventScreenCapture();
 
   // Initialize the native expo-video player
   const player = useVideoPlayer(videoUrl, (player) => {
