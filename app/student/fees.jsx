@@ -58,12 +58,14 @@ const FeeScreen = () => {
   const { bank } = School;
 
   const {
+    baseAmount = 0,
     amount = 0,
     lateFee = 0,
     extraFeeAmount = 0,
     extraFeeName = "",
     previousBalance = 0,
     lmsFee = 0,
+    feeDiscount = 0,
     dueDate = new Date(),
     isPaid = false,
     isExpired = false,
@@ -85,14 +87,14 @@ const FeeScreen = () => {
                 data: fileUri,
                 type: mimeType || "application/pdf",
                 flags: 268435457, // FLAG_ACTIVITY_NEW_TASK | FLAG_GRANT_READ_URI_PERMISSION
-              }
+              },
             );
           } catch (err) {
             console.error("Failed to open file:", err);
             Alert.alert("Error", "Unable to open downloaded file.");
           }
         }
-      }
+      },
     );
 
     return () => sub.remove();
@@ -117,7 +119,7 @@ const FeeScreen = () => {
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "Please enable notifications from system settings."
+          "Please enable notifications from system settings.",
         );
       }
     })();
@@ -136,7 +138,7 @@ const FeeScreen = () => {
     });
   };
 
-  let netAmount = amount + extraFeeAmount + previousBalance + lmsFee;
+  let netAmount = amount + previousBalance + lmsFee;
   const isLateFee = new Date() > new Date(dueDate) && !isFineWavedOff;
   const hasExtraFee = Boolean(extraFeeAmount) && Boolean(extraFeeName);
   if (isLateFee) netAmount += lateFee;
@@ -186,7 +188,7 @@ const FeeScreen = () => {
       setStudent({
         name: "loaderText",
         value: "Please Wait...Downloading File",
-      })
+      }),
     );
     dispatch(setStudent({ name: "loading", value: true }));
     const result = await generateChallan(fee, bank);
@@ -198,7 +200,7 @@ const FeeScreen = () => {
       setStudent({
         name: "loaderText",
         value: "",
-      })
+      }),
     );
   };
 
@@ -267,8 +269,8 @@ const FeeScreen = () => {
                 color: isExpired
                   ? Colors.red
                   : isPaid
-                  ? Colors.green
-                  : Colors.blue,
+                    ? Colors.green
+                    : Colors.blue,
               }}
             >
               {isExpired ? "EXPIRED" : isPaid ? "PAID" : "PENDING"}
@@ -285,9 +287,16 @@ const FeeScreen = () => {
           {showDetails && (
             <View style={styles.breakdown}>
               <View style={styles.breakdownRow}>
-                <Text>Academic Fees</Text>
-                <Text>Rs. {formatNumber(amount)}</Text>
+                <Text>Tuition Fees</Text>
+                <Text>Rs. {formatNumber(baseAmount)}</Text>
               </View>
+
+              {feeDiscount > 0 && (
+                <View style={styles.breakdownRow}>
+                  <Text>Discount (-)</Text>
+                  <Text>Rs. -{formatNumber(feeDiscount)}</Text>
+                </View>
+              )}
               <View style={styles.breakdownRow}>
                 <Text>LMS Fees</Text>
                 <Text>Rs. {formatNumber(lmsFee)}</Text>

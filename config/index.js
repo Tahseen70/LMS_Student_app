@@ -41,7 +41,7 @@ const getBaseUri = async () => {
 
   const perms =
     await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(
-      defaultDirectoryUri
+      defaultDirectoryUri,
     );
   if (!perms.granted) throw new Error("Permission denied");
 
@@ -53,9 +53,8 @@ const getBaseUri = async () => {
 };
 
 const ensureSubfolder = async (parentUri, folderName) => {
-  const children = await FileSystem.StorageAccessFramework.readDirectoryAsync(
-    parentUri
-  );
+  const children =
+    await FileSystem.StorageAccessFramework.readDirectoryAsync(parentUri);
 
   const match = children.find((uri) => {
     const name = decodeURIComponent(uri.split("%2F").pop());
@@ -66,7 +65,7 @@ const ensureSubfolder = async (parentUri, folderName) => {
 
   return await FileSystem.StorageAccessFramework.makeDirectoryAsync(
     parentUri,
-    folderName
+    folderName,
   );
 };
 
@@ -118,63 +117,71 @@ const getImageBase64 = async (url) => {
 
 const generateChallan = async (fee, bank) => {
   try {
-    // Helper to ensure jsPDF gets a string
     const safeText = (val) =>
       val !== undefined && val !== null ? String(val) : "";
 
     // Objects
     const student = fee.student;
     const studentClass = fee.class;
+    const campus = fee.campus;
+    const school = fee.school;
 
-    // Vars
+    // Dates
     const dueDate = fee.dueDate;
     const formattedDueDate = moment(dueDate).format("DD-MMM-YYYY");
+
     const month = fee.month;
     const formattedMonth = moment(month).format("MMM, YYYY");
     const formattedFeeLabel = `Fee (${moment(month).format("MMM-YYYY")})`;
+
+    // Amounts (✅ desktop logic aligned)
+    const baseAmountRaw = fee.baseAmount || fee.amount;
+    const discountRaw = fee.feeDiscount || 0;
+
+    const baseAmount = formatNumber(baseAmountRaw);
+    const feeDiscount = formatNumber(discountRaw);
     const feeAmount = formatNumber(fee.amount);
+
     const lmsFee = formatNumber(fee.lmsFee);
-    const outstandingFee = fee.previousBalance
-      ? formatNumber(fee.previousBalance)
-      : 0;
-    let extraAmountToAdd = 0;
-    if (fee.extraFeeAmount) extraAmountToAdd = fee.extraFeeAmount;
-    const totalAmount = formatNumber(
-      fee.amount + fee.previousBalance + fee.lmsFee + extraAmountToAdd
-    );
-    const lateFee = formatNumber(fee.lateFee);
-    const lateFeeTotalAmount = formatNumber(
-      fee.amount +
-        fee.previousBalance +
-        fee.lmsFee +
-        fee.lateFee +
-        extraAmountToAdd
-    );
-    const issueDate = moment(fee.createdAt).format("DD-MMM-YYYY");
+
+    const outstandingRaw = fee.previousBalance || 0;
+    const outstandingFee = outstandingRaw ? formatNumber(outstandingRaw) : 0;
+
+    const extraRaw = fee.extraFeeAmount || 0;
     const extraFeeName = fee.extraFeeName;
-    const extraFeeAmount = formatNumber(fee.extraFeeAmount);
+    const extraFeeAmount = formatNumber(extraRaw);
+
+    const lateFee = formatNumber(fee.lateFee);
+
+    const totalAmount = formatNumber(
+      fee.amount + outstandingRaw + fee.lmsFee + extraRaw,
+    );
+
+    const lateFeeTotalAmount = formatNumber(
+      fee.amount + outstandingRaw + fee.lmsFee + fee.lateFee + extraRaw,
+    );
+
+    const issueDate = moment(fee.createdAt).format("DD-MMM-YYYY");
 
     // School & Campus
-    const campus = fee.campus;
     const campusName = campus.name;
-    const school = fee.school;
     const schoolName = school.name;
     const schoolLogo = school.logoUrl;
     const schoolPhoneNumber = campus?.phoneNumber;
-    const pngUrl = schoolLogo.replace("/upload/", "/upload/f_png/"); // force cloudinary to serve image as PNG
+
+    const pngUrl = schoolLogo.replace("/upload/", "/upload/f_png/");
     const logoBase64 = await getImageBase64(pngUrl);
 
     // Bank
     const bankName = `${bank.name} Bank`;
     const bankTitle = bank.title;
-    const bankAccount = bank.account;
+    const bankAccount = safeText(bank.account);
 
     // Student
     const studentName = student.name;
     const fatherName = student.fatherName;
-    const formattedClass = ` ${studentClass.name}-${studentClass.section} (${studentClass.timeDuration.name})`;
+    const formattedClass = `${studentClass.name}-${studentClass.section} (${studentClass.timeDuration.name})`;
 
-    // PDF Generation
     const doc = new jsPDF({
       orientation: "landscape",
       unit: "mm",
@@ -183,6 +190,7 @@ const generateChallan = async (fee, bank) => {
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
+
     const margin = 5;
     const usableWidth = pageWidth - margin * 2;
     const sectionWidth = usableWidth / 3;
@@ -191,7 +199,6 @@ const generateChallan = async (fee, bank) => {
     const drawChallan = (xOffset, title) => {
       let currentY = margin + 5;
 
-      // Outer border
       doc.rect(xOffset, margin, sectionWidth, sectionHeight);
 
       // Logo
@@ -201,17 +208,18 @@ const generateChallan = async (fee, bank) => {
         xOffset + sectionWidth / 2 - 8,
         12,
         16,
-        16
+        16,
       );
 
       currentY = 35;
 
-      // School Name & Address
+      // Header
       doc.setFont("times", "bold");
       doc.setFontSize(12);
       doc.text(safeText(schoolName), xOffset + sectionWidth / 2, currentY, {
         align: "center",
       });
+
       currentY += 6;
 
       doc.setFont("times", "normal");
@@ -219,87 +227,73 @@ const generateChallan = async (fee, bank) => {
       doc.text(safeText(campusName), xOffset + sectionWidth / 2, currentY, {
         align: "center",
       });
+
       if (schoolPhoneNumber) {
         currentY += 5;
         doc.text(
-          "Phone: " + safeText(schoolPhoneNumber),
+          `Phone: ${safeText(schoolPhoneNumber)}`,
           xOffset + sectionWidth / 2,
           currentY,
-          { align: "center" }
+          { align: "center" },
         );
       }
+
       currentY += 7;
 
-      // Account Number Boxes
-      const accountNumber = bankAccount;
+      // ✅ Account number boxes (same as desktop)
       const boxSize = 5;
-      const totalWidth = accountNumber.length * boxSize;
+      const totalWidth = bankAccount.length * boxSize;
       const startX = xOffset + sectionWidth / 2 - totalWidth / 2;
 
-      for (let i = 0; i < accountNumber.length; i++) {
+      for (let i = 0; i < bankAccount.length; i++) {
         const x = startX + i * boxSize;
         doc.rect(x, currentY, boxSize, 6);
-        doc.text(safeText(accountNumber[i]), x + boxSize / 2, currentY + 4, {
+        doc.text(bankAccount[i], x + boxSize / 2, currentY + 4, {
           align: "center",
         });
       }
 
       currentY += 10;
 
-      // Bank Name
-      doc.rect(xOffset + 2, currentY, sectionWidth - 4, 6);
-      doc.line(
-        xOffset + sectionWidth / 2,
-        currentY,
-        xOffset + sectionWidth / 2,
-        currentY + 6
-      );
-      doc.text("Bank Name", xOffset + 4, currentY + 4);
-      doc.text(
-        safeText(bankName),
-        xOffset + sectionWidth / 2 + 4,
-        currentY + 4
-      );
+      // Bank rows
+      const drawRow = (label, value) => {
+        doc.rect(xOffset + 2, currentY, sectionWidth - 4, 6);
+        doc.line(
+          xOffset + sectionWidth / 2,
+          currentY,
+          xOffset + sectionWidth / 2,
+          currentY + 6,
+        );
+        doc.text(label, xOffset + 4, currentY + 4);
+        doc.text(safeText(value), xOffset + sectionWidth / 2 + 4, currentY + 4);
+        currentY += 8;
+      };
 
-      currentY += 8;
+      drawRow("Bank Name", bankName);
+      drawRow("Title", bankTitle);
 
       // Title
-      doc.rect(xOffset + 2, currentY, sectionWidth - 4, 6);
-      doc.line(
-        xOffset + sectionWidth / 2,
-        currentY,
-        xOffset + sectionWidth / 2,
-        currentY + 6
-      );
-      doc.text("Title", xOffset + 4, currentY + 4);
-      doc.text(
-        safeText(bankTitle),
-        xOffset + sectionWidth / 2 + 4,
-        currentY + 4
-      );
-
-      // Copy Title
-      currentY += 8;
       doc.setFont("times", "bold");
-      doc.setFontSize(10);
       doc.rect(xOffset + 2, currentY, sectionWidth - 4, 6);
-      doc.text(safeText(title), xOffset + sectionWidth / 2, currentY + 4, {
+      doc.text(title, xOffset + sectionWidth / 2, currentY + 4, {
         align: "center",
       });
+
       currentY += 10;
 
-      // Student Info
+      // Student Info (kept structure, safer formatting)
       const info = [
         ["Comp No:", "Month:", "1234", formattedMonth],
-        ["Student's Name:", studentName],
-        ["Father's Name:", fatherName],
-        ["Class/Section:", formattedClass],
+        ["Student's Name:", safeText(studentName)],
+        ["Father's Name:", safeText(fatherName)],
+        ["Class/Section:", safeText(formattedClass)],
         ["Issue Date:", "Due Date:", issueDate, formattedDueDate],
-        ["Slip No#:", "2509357445"],
+        ["Slip No#:", safeText(fee.slipNo || "")],
       ];
 
       const studentBoxHeight = 32;
       const rowHeight = studentBoxHeight / info.length;
+
       doc.rect(xOffset + 2, currentY, sectionWidth - 4, studentBoxHeight);
 
       for (let i = 1; i < info.length; i++) {
@@ -310,31 +304,28 @@ const generateChallan = async (fee, bank) => {
       const dividerX = xOffset + sectionWidth / 2;
       doc.line(dividerX, currentY, dividerX, currentY + studentBoxHeight);
 
-      doc.setFont("times", "normal");
       doc.setFontSize(8);
+
       let infoY = currentY + rowHeight / 2 + 1;
-      const labelWidth = 20;
 
-      info.forEach((row, i) => {
-        const rowTop = currentY + i * rowHeight;
-        const rowBottom = rowTop + rowHeight;
-
+      info.forEach((row) => {
         if (row.length === 4) {
-          const leftLabelX = xOffset + 4;
-          const leftDividerX = xOffset + 2 + labelWidth;
-
-          doc.text(safeText(row[0]), leftLabelX, infoY);
-          doc.line(leftDividerX, rowTop, leftDividerX, rowBottom);
-          doc.text(safeText(row[2]), leftDividerX + 2, infoY);
-
-          const rightLabelX = dividerX + 4;
-          const rightDividerX = dividerX + labelWidth;
-
-          doc.text(safeText(row[1]), rightLabelX, infoY);
-          doc.line(rightDividerX, rowTop, rightDividerX, rowBottom);
-          doc.text(safeText(row[3]), rightDividerX + 2, infoY);
-        } else {
+          doc.setFont("times", "bold");
           doc.text(safeText(row[0]), xOffset + 4, infoY);
+
+          doc.setFont("times", "normal");
+          doc.text(safeText(row[2]), xOffset + 24, infoY);
+
+          doc.setFont("times", "bold");
+          doc.text(safeText(row[1]), dividerX + 4, infoY);
+
+          doc.setFont("times", "normal");
+          doc.text(safeText(row[3]), dividerX + 24, infoY);
+        } else {
+          doc.setFont("times", "bold");
+          doc.text(safeText(row[0]), xOffset + 4, infoY);
+
+          doc.setFont("times", "normal");
           doc.text(safeText(row[1]), dividerX + 4, infoY);
         }
 
@@ -343,98 +334,88 @@ const generateChallan = async (fee, bank) => {
 
       currentY += studentBoxHeight + 5;
 
-      // Fee Table
-      const feeBoxHeight = 36; // increased to fit extra row
+      // =========================
+      // ✅ DYNAMIC FEE TABLE (desktop aligned)
+      // =========================
+
+      let rows = [];
+
+      if (discountRaw > 0) {
+        rows.push(["Tuition Fee", baseAmount]);
+        rows.push(["Discount (-)", `-${feeDiscount}`]);
+      } else {
+        rows.push([formattedFeeLabel, feeAmount]);
+      }
+
+      rows.push(["LMS Fee", lmsFee]);
+
+      if (outstandingRaw) {
+        rows.push(["Outstanding", outstandingFee]);
+      }
+
+      if (extraFeeName && extraRaw) {
+        rows.push([extraFeeName, extraFeeAmount]);
+      }
+
+      rows.push(["Total Amount", totalAmount]);
+      rows.push(["After due date", lateFeeTotalAmount]);
+
+      const rowH = 5;
+      const feeBoxHeight = (rows.length + 1) * rowH;
+
       doc.rect(xOffset + 2, currentY, sectionWidth - 4, feeBoxHeight);
+
       const feeDividerX = xOffset + sectionWidth - 30;
       doc.line(feeDividerX, currentY, feeDividerX, currentY + feeBoxHeight);
 
       let feeY = currentY + 4;
+
       doc.setFont("times", "bold");
       doc.text("Particulars", xOffset + 4, feeY);
       doc.text("Amount", feeDividerX + 2, feeY);
+
       doc.line(xOffset + 2, feeY + 1, xOffset + sectionWidth - 2, feeY + 1);
 
-      feeY += 5;
+      feeY += rowH;
       doc.setFont("times", "normal");
-      doc.text(safeText(formattedFeeLabel), xOffset + 4, feeY);
-      doc.text(safeText(feeAmount), feeDividerX + 2, feeY);
-      doc.line(xOffset + 2, feeY + 1, xOffset + sectionWidth - 2, feeY + 1);
 
-      feeY += 5;
-      doc.text("LMS fees", xOffset + 4, feeY);
-      doc.text(safeText(lmsFee), feeDividerX + 2, feeY);
-      doc.line(xOffset + 2, feeY + 1, xOffset + sectionWidth - 2, feeY + 1);
+      rows.forEach(([label, value]) => {
+        if (label === "Total Amount") {
+          doc.setFont("times", "bold");
+        }
 
-      if (outstandingFee) {
-        feeY += 5;
-        doc.text("Outstanding", xOffset + 4, feeY);
-        doc.text(safeText(outstandingFee), feeDividerX + 2, feeY);
+        doc.text(safeText(label), xOffset + 4, feeY);
+        doc.text(safeText(value), feeDividerX + 2, feeY);
+
+        doc.setFont("times", "normal");
         doc.line(xOffset + 2, feeY + 1, xOffset + sectionWidth - 2, feeY + 1);
-      }
 
-      if (extraFeeName && extraFeeAmount) {
-        feeY += 5;
-        doc.text(safeText(extraFeeName), xOffset + 4, feeY);
-        doc.text(safeText(extraFeeAmount), feeDividerX + 2, feeY);
-        doc.line(xOffset + 2, feeY + 1, xOffset + sectionWidth - 2, feeY + 1);
-      }
-
-      // blank lines
-      if (!outstandingFee) {
-        feeY += 5;
-        doc.text("", xOffset + 4, feeY);
-        doc.text("", feeDividerX + 2, feeY);
-        doc.line(xOffset + 2, feeY + 1, xOffset + sectionWidth - 2, feeY + 1);
-      }
-
-      if (!(extraFeeName && extraFeeAmount)) {
-        feeY += 5;
-        doc.text("", xOffset + 4, feeY);
-        doc.text("", feeDividerX + 2, feeY);
-        doc.line(xOffset + 2, feeY + 1, xOffset + sectionWidth - 2, feeY + 1);
-      }
-
-      feeY += 5;
-      doc.setFont("times", "bold");
-      doc.text("Total Amount", xOffset + 4, feeY);
-      doc.text(safeText(totalAmount), feeDividerX + 2, feeY);
-      doc.line(xOffset + 2, feeY + 1, xOffset + sectionWidth - 2, feeY + 1);
-
-      feeY += 5;
-      doc.text("After due date", xOffset + 4, feeY);
-      doc.text(safeText(lateFeeTotalAmount), feeDividerX + 2, feeY);
+        feeY += rowH;
+      });
 
       currentY += feeBoxHeight + 8;
 
-      // Parent Note Box
+      // Footer
       const parentBoxHeight = 14;
       doc.rect(xOffset + 2, currentY, sectionWidth - 4, parentBoxHeight);
 
-      let noteY = currentY + 4;
       doc.setFontSize(7);
-      doc.setFont("times", "normal");
-      doc.text("Dear parents", xOffset + 4, noteY);
-      noteY += 4;
+      doc.text("Dear parents", xOffset + 4, currentY + 4);
+
       doc.text(
-        safeText(
-          `Fee paid after due date is subjected to a fine of rupees Rs/${lateFee} per month.`
-        ),
+        `Fee paid after due date is subjected to a fine of rupees Rs/${lateFee} per month.`,
         xOffset + 4,
-        noteY,
-        { maxWidth: sectionWidth - 8 }
+        currentY + 8,
+        { maxWidth: sectionWidth - 8 },
       );
-      noteY += 4;
+
       doc.text(
         "Fee once paid is not refundable and non transferable",
         xOffset + 4,
-        noteY,
-        { maxWidth: sectionWidth - 8 }
+        currentY + 12,
+        { maxWidth: sectionWidth - 8 },
       );
 
-      currentY += parentBoxHeight + 3;
-
-      // Signature
       const signatureY = margin + sectionHeight - 10;
       doc.setFontSize(8);
       doc.text("(Signature & Stamp)", xOffset + sectionWidth / 2, signatureY, {
@@ -447,48 +428,41 @@ const generateChallan = async (fee, bank) => {
     drawChallan(margin + sectionWidth * 2, "Student Copy");
 
     const filename = `${formattedMonth}.pdf`;
-
     const pdfBytes = doc.output("arraybuffer");
 
     const bytes = new Uint8Array(pdfBytes);
 
     const cacheFile = new File(Paths.cache, filename);
-
     await cacheFile.write(bytes);
 
-    // put into a temp file first
     const cacheUri = cacheFile.uri;
 
     if (Platform.OS === "android") {
-      // ask for the Grader folder like before
       const graderUri = await getGraderFolderUri(["Challans"]);
-      // create an empty PDF file there
+
       const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
         graderUri,
         filename,
-        "application/pdf"
+        "application/pdf",
       );
 
-      // write base64 into SAF file
       const file = new File(newUri);
       file.write(bytes);
 
-      Alert.alert("Success ✅", `PDF saved to ${APP_NAME} folder`);
+      Alert.alert("Success ✅", `PDF saved`);
       return { uri: newUri, filename, type: "application/pdf" };
     } else {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(cacheUri, {
           mimeType: "application/pdf",
         });
-        return { uri: cacheUri, filename, type: "application/pdf" };
-      } else {
-        Alert.alert("Downloaded ✅", `Saved to app cache: ${cacheUri}`);
-        return { uri: cacheUri, filename, type: "application/pdf" };
       }
+
+      return { uri: cacheUri, filename, type: "application/pdf" };
     }
   } catch (error) {
     console.error("❌ Generate Challan Error:", error);
-    Alert.alert("Error Occured ❌", `Could not generate Challan`);
+    Alert.alert("Error Occured ❌", "Could not generate Challan");
     return null;
   }
 };
