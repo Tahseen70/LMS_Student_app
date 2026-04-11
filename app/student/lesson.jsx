@@ -11,6 +11,7 @@ import { useState } from "react";
 
 import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
+import { useRouter } from "expo-router";
 import SkeletonLoader from "../../components/SkeletonLoader";
 
 import Colors from "../../styles/Colors";
@@ -23,6 +24,7 @@ import VideoModal from "../../components/VideoModal";
 import { setStudent } from "../../redux/slices/studentSlice";
 
 const LessonsScreen = () => {
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
 
@@ -96,7 +98,7 @@ const LessonsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <PageHeader text="Lessons" />
+      <PageHeader text="Lessons" onBack={() => router.navigate("/student/course")} />
 
       <FlatList
         data={Array.isArray(allLessons) ? allLessons : []}

@@ -18,6 +18,7 @@ import * as IntentLauncher from "expo-intent-launcher";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
+import { useRouter } from "expo-router";
 import SkeletonLoader from "../../components/SkeletonLoader";
 import { formatNumber, generateChallan } from "../../config";
 import { getBank } from "../../redux/actions/schoolAction";
@@ -47,6 +48,7 @@ Notifications.setNotificationHandler({
 
 const FeeScreen = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState(getMonths()[0]);
   const [showDetails, setShowDetails] = useState(false);
   const [months, setMonths] = useState(() => getMonths(12, 0)); // initial 12 months
@@ -207,7 +209,7 @@ const FeeScreen = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* Header */}
-      <PageHeader text="Fees" />
+      <PageHeader text="Fees" onBack={() => router.navigate("/student/more")} />
       {/* Month Toggles */}
       <View style={styles.monthBar}>
         <ScrollView

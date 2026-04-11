@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import {
   SafeAreaView,
@@ -22,6 +22,7 @@ const cellWidth = 100;
 
 const TeacherScheduleScreen = () => {
   const router = useRouter();
+  const { from } = useLocalSearchParams();
   const dispatch = useDispatch();
   const Student = useSelector((state) => state.Student);
   const { loading, timeTable, timeDuration } = Student;
@@ -95,7 +96,12 @@ const TeacherScheduleScreen = () => {
       <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
       <View style={styles.container}>
         {/* Header */}
-        <PageHeader text="Weekly Schedule" />
+        <PageHeader
+          text="Weekly Schedule"
+          onBack={() =>
+            router.navigate(from === "home" ? "/student/home" : "/student/more")
+          }
+        />
 
         {loading ? (
           <ListEmpty text={"Loading..."} />

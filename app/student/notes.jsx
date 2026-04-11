@@ -17,6 +17,7 @@ import ShimmerPlaceholder from "react-native-shimmer-placeholder";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import SkeletonLoader from "../../components/SkeletonLoader";
 import { getExtensionName, getGraderFolderUri, hexToRgba } from "../../config";
 import { getNotes } from "../../redux/actions/noteAction";
@@ -44,6 +45,8 @@ Notifications.setNotificationHandler({
 });
 
 const NotesScreen = () => {
+  const router = useRouter();
+  const { from } = useLocalSearchParams();
   const dispatch = useDispatch();
   const Note = useSelector((state) => state.Note);
   const { loading, allNotes = [], notesPage = 1, notesHasMore = false } = Note;
@@ -297,7 +300,12 @@ const NotesScreen = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <PageHeader text="Notes" />
+      <PageHeader
+        text="Notes"
+        onBack={() =>
+          router.navigate(from === "home" ? "/student/home" : "/student/more")
+        }
+      />
       {subjectLoading ? (
         <View style={styles.monthBar}>
           {[...Array(5)].map((_, index) => (

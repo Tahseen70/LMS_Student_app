@@ -12,6 +12,7 @@ import {
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useDispatch, useSelector } from "react-redux";
 import PageHeader from "../../components/PageHeader";
+import { useRouter } from "expo-router";
 import { getStudentDiary } from "../../redux/actions/studentAction";
 import { setStudent } from "../../redux/slices/studentSlice";
 import Colors from "../../styles/Colors";
@@ -22,6 +23,7 @@ import SkeletonLoader from "../../components/SkeletonLoader";
 
 const DiaryScreen = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
 
   const {
@@ -53,7 +55,7 @@ const DiaryScreen = () => {
 
   return (
     <View style={styles.container}>
-      <PageHeader text="Diary" />
+      <PageHeader text="Diary" onBack={() => router.navigate("/student/more")} />
 
       {/* DATE */}
       <View style={styles.dateContainer}>

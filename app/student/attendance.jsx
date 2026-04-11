@@ -12,6 +12,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   getAttendanceByMonth,
   getAttendanceStatsByMonth,
@@ -30,6 +31,8 @@ const getMonths = (count = 12, offset = 0) => {
 };
 
 const StudentAttendanceScreen = () => {
+  const router = useRouter();
+  const { from } = useLocalSearchParams();
   const [months, setMonths] = useState(() => getMonths(12, 0)); // initial 12 months
   const [selectedMonth, setSelectedMonth] = useState(months[0]);
   const [offset, setOffset] = useState(12); // how many months already loaded
@@ -85,7 +88,12 @@ const StudentAttendanceScreen = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* Header */}
-      <PageHeader text="Attendance" />
+      <PageHeader
+        text="Attendance"
+        onBack={() =>
+          router.navigate(from === "more" ? "/student/more" : "/student/home")
+        }
+      />
       {/* Month Toggle */}
       <View style={styles.monthBar}>
         <ScrollView

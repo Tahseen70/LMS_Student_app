@@ -120,7 +120,7 @@ const CoursesScreen = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <PageHeader text="Select Course" />
+      <PageHeader text="Select Course" onBack={() => router.navigate("/student/more")} />
       {subjectLoading ? (
         <View style={styles.monthBar}>
           {[...Array(5)].map((_, index) => (

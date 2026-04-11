@@ -4,6 +4,7 @@ import RNPickerSelect from "react-native-picker-select";
 import { useDispatch, useSelector } from "react-redux";
 import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   getAllExams,
   getAllGrades,
@@ -15,6 +16,8 @@ import ContainerStyles from "../../styles/ContainerStyles";
 import HeaderStyles from "../../styles/HeaderStyles";
 
 const StudentResultScreen = () => {
+  const router = useRouter();
+  const { from } = useLocalSearchParams();
   const dispatch = useDispatch();
   const Marks = useSelector((state) => state.Marks);
   const { allExams, results, selectedExam, grades } = Marks;
@@ -53,7 +56,12 @@ const StudentResultScreen = () => {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       {/* Header */}
-      <PageHeader text="My Results" />
+      <PageHeader
+        text="My Results"
+        onBack={() =>
+          router.navigate(from === "more" ? "/student/more" : "/student/home")
+        }
+      />
 
       {/* Exam Selector */}
       <View style={styles.pickerContainer}>
