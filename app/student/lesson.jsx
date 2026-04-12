@@ -116,11 +116,16 @@ const LessonsScreen = () => {
         }
       />
 
-      <VideoModal
-        visible={modalVisible}
-        videoUrl={selectedVideo}
-        onClose={() => setModalVisible(false)}
-      />
+      {modalVisible && (
+        <VideoModal
+          visible={modalVisible}
+          videoUrl={selectedVideo}
+          onClose={() => {
+            setModalVisible(false);
+            setSelectedVideo(null);
+          }}
+        />
+      )}
     </View>
   );
 };
