@@ -66,13 +66,14 @@ const VideoModal = ({ visible, videoUrl, onClose }) => {
           </View>
         )}
 
-        <View style={{ width, height: width * (9 / 16) }}>
+        <View style={styles.videoContainer}>
           <VideoView
             player={player}
             style={styles.video}
             allowsFullscreen
             allowsPictureInPicture
             nativeControls
+            contentFit="contain"
             fullscreenOptions={{
               enable: true,
               orientation: 'landscape',
@@ -95,6 +96,11 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
     justifyContent: "center",
     alignItems: "center",
+  },
+  videoContainer: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "black",
   },
   video: {
     width: "100%",
