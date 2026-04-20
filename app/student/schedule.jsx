@@ -39,6 +39,8 @@ const TeacherScheduleScreen = () => {
     if (timeDuration?.isFridayOn) days.push("friday");
 
     if (timeDuration?.isSaturdayOn) days.push("saturday");
+    
+    if (timeDuration?.isSundayOn) days.push("sunday");
 
     const result = {};
     const numberOfClasses = timeDuration?.numberOfClasses || 0;
@@ -128,7 +130,7 @@ const TeacherScheduleScreen = () => {
                         <Text style={styles.headerText}>Period {i + 1}</Text>
                       </View>
                       {/* Break column header after 4th period */}
-                      {i + 1 === 4 && (
+                      {i + 1 === (timeDuration?.breakAfter || 4) && (timeDuration?.hasBreak || timeDuration?.isBreakOn || timeDuration?.isBreak) && (
                         <View style={styles.breakCell}>
                           <Text style={styles.breakText}>BREAK</Text>
                         </View>
@@ -158,7 +160,7 @@ const TeacherScheduleScreen = () => {
                           </View>
                         </View>
                         {/* Break column after 4th period */}
-                        {i + 1 === 4 && (
+                        {i + 1 === (timeDuration?.breakAfter || 4) && (timeDuration?.hasBreak || timeDuration?.isBreakOn || timeDuration?.isBreak) && (
                           <View style={styles.breakCell}>
                             <Text style={styles.breakText}>BREAK</Text>
                           </View>

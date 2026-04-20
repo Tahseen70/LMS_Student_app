@@ -95,6 +95,7 @@ const TeacherLayout = () => {
         <Tabs.Screen name="notes" options={{ href: null }} />
         <Tabs.Screen name="schedule" options={{ href: null }} />
         <Tabs.Screen name="profile" options={{ href: null }} />
+        <Tabs.Screen name="links" options={{ href: null }} />
       </Tabs>
     </Fragment>
   );

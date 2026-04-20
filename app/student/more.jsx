@@ -120,6 +120,11 @@ const More = () => {
               route: "/student/course",
               icon: "videocam-outline",
             },
+            {
+              label: "Links",
+              route: "/student/links",
+              icon: "link-outline",
+            },
           ]}
         />
 
