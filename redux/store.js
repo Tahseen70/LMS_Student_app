@@ -8,7 +8,7 @@ import subjectSlice from "./slices/subjectSlice";
 import teacherSlice from "./slices/teacherSlice";
 import courseSlice from "./slices/courseSlice";
 import lessonSlice from "./slices/lessonSlice";
-
+import meetingSlice from "./slices/meetingSlice";
 // Combine your reducers
 const rootReducer = combineReducers({
   Teacher: teacherSlice,
@@ -20,6 +20,7 @@ const rootReducer = combineReducers({
   Student: studentSlice,
   Course: courseSlice,
   Lesson: lessonSlice,
+  Meeting: meetingSlice,
 });
 
 export const store = configureStore({

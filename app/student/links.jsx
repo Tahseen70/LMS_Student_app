@@ -1,12 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import * as Linking from "expo-linking";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
+  FlatList,
+  Linking,
   SafeAreaView,
-  ScrollView,
   Share,
   StatusBar,
   StyleSheet,
@@ -14,128 +13,170 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+
+import ListEmpty from "../../components/ListEmpty";
 import PageHeader from "../../components/PageHeader";
+
+import { getStudentMeetings } from "../../redux/actions/meetingAction";
+
 import Colors from "../../styles/Colors";
 import ContainerStyles from "../../styles/ContainerStyles";
 
 const LinksScreen = () => {
-  const router = useRouter();
-  const { from } = useLocalSearchParams();
+  const dispatch = useDispatch();
 
-  // Placeholder links for now
-  const [links, setLinks] = useState([
-    {
-      id: "1",
-      title: "School Official Website",
-      url: "https://www.example.com",
-      description: "Visit our official website for more updates and news.",
-    },
-    {
-      id: "2",
-      title: "Student Portal Guide",
-      url: "https://www.example.com/guide",
-      description: "A comprehensive guide on how to use the student portal effectively.",
-    },
-  ]);
+  const Meeting = useSelector((state) => state.Meeting);
+  const { studentMeeting, loading } = Meeting;
 
-  const copyToClipboard = async (url) => {
+  const selectedMeeting = studentMeeting || {};
+  const items = selectedMeeting.allItems || [];
+
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    dispatch(
+      getStudentMeetings({
+        page: 1,
+        limit: 5,
+      })
+    );
+  }, []);
+
+  // ===============================
+  // Actions
+  // ===============================
+  const handleCopy = async (url) => {
     await Clipboard.setStringAsync(url);
-    Alert.alert("Copied", "Link copied to clipboard!");
+    Alert.alert("Success", "Link copied to clipboard!");
   };
 
-  const openLink = async (url) => {
-    const supported = await Linking.canOpenURL(url);
-    if (supported) {
-      await Linking.openURL(url);
-    } else {
-      Alert.alert("Error", "Cannot open this URL.");
-    }
-  };
-
-  const shareLink = async (title, url) => {
+  const handleShare = async (url, title) => {
     try {
       await Share.share({
-        message: `${title}\n${url}`,
+        message: `Here is the link for ${title}\n${url}`,
+        url,
       });
     } catch (error) {
-      Alert.alert("Error", error.message);
+      Alert.alert("Error", "Could not share link.");
     }
   };
+
+  const handleOpen = async (url) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Error", "Invalid URL");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Could not open URL.");
+    }
+  };
+
+  // ===============================
+  // Pagination
+  // ===============================
+  const loadMore = () => {
+    if (loading || !selectedMeeting.hasMore) return;
+
+    const nextPage = selectedMeeting.currentPage + 1;
+
+    setPage(nextPage);
+
+    dispatch(
+      getStudentMeetings({
+        page: nextPage,
+        limit: 5,
+      })
+    );
+  };
+
+  // ===============================
+  // Render Item
+  // ===============================
+  const renderItem = ({ item }) => (
+    <View style={styles.linkCard}>
+      <View style={styles.linkInfo}>
+        <Ionicons
+          name="link"
+          size={24}
+          color={Colors.primary}
+          style={styles.icon}
+        />
+
+        <View style={{ flex: 1 }}>
+          <Text style={styles.linkTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
+
+          <Text style={styles.linkSubTitle} numberOfLines={1}>
+            {item.subject?.name}
+          </Text>
+
+          <Text style={styles.linkName} numberOfLines={1}>
+            {item.teacher?.name}
+          </Text>
+
+          <Text style={styles.linkUrl} numberOfLines={1}>
+            {item.link}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleCopy(item.link)}
+        >
+          <Ionicons name="copy-outline" size={20} color={Colors.secondary} />
+          <Text style={styles.actionText}>Copy</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleShare(item.link, item.title)}
+        >
+          <Ionicons
+            name="share-social-outline"
+            size={20}
+            color={Colors.secondary}
+          />
+          <Text style={styles.actionText}>Share</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.primaryActionBtn]}
+          onPress={() => handleOpen(item.link)}
+        >
+          <Ionicons name="open-outline" size={20} color={Colors.tertiary} />
+          <Text style={[styles.actionText, styles.primaryActionText]}>
+            Open
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
-      <View style={styles.container}>
-        <PageHeader
-          text="Links"
-          onBack={() =>
-            router.navigate(from === "home" ? "/student/home" : "/student/more")
-          }
-        />
 
-        <ScrollView
+      <View style={[styles.container, { backgroundColor: Colors.tertiary }]}>
+        <PageHeader text="Links" />
+
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item._id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContainer}
-        >
-          {links.length > 0 ? (
-            links.map((link) => (
-              <View key={link.id} style={styles.linkCard}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.iconContainer}>
-                    <Ionicons name="link" size={24} color={Colors.primary} />
-                  </View>
-                  <View style={styles.cardInfo}>
-                    <Text style={styles.linkTitle} numberOfLines={1}>
-                      {link.title}
-                    </Text>
-                    {link.description && (
-                      <Text style={styles.linkDescription} numberOfLines={2}>
-                        {link.description}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-
-                <View style={styles.linkDisplay}>
-                  <Text style={styles.urlText} numberOfLines={1}>
-                    {link.url}
-                  </Text>
-                </View>
-
-                <View style={styles.actionsContainer}>
-                  <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => openLink(link.url)}
-                  >
-                    <Ionicons name="open-outline" size={18} color={Colors.tertiary} />
-                    <Text style={styles.actionText}>Open</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.copyBtn]}
-                    onPress={() => copyToClipboard(link.url)}
-                  >
-                    <Ionicons name="copy-outline" size={18} color={Colors.primary} />
-                    <Text style={[styles.actionText, styles.copyText]}>Copy</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.shareBtn]}
-                    onPress={() => shareLink(link.title, link.url)}
-                  >
-                    <Ionicons name="share-social-outline" size={18} color={Colors.primary} />
-                    <Text style={[styles.actionText, styles.shareText]}>Share</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="link-outline" size={64} color={Colors.primaryDark} />
-              <Text style={styles.emptyText}>No links available at the moment.</Text>
-            </View>
-          )}
-        </ScrollView>
+          ListEmptyComponent={<ListEmpty text="No Links Available" />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+        />
       </View>
     </SafeAreaView>
   );
@@ -146,107 +187,95 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.primary,
   },
-  ...ContainerStyles,
-  scrollContainer: {
+
+  container: {
+    ...ContainerStyles.container,
+    flex: 1,
+  },
+
+  listContainer: {
     padding: 16,
     paddingBottom: 40,
   },
+
   linkCard: {
     backgroundColor: Colors.tertiary,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 12,
     marginBottom: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: Colors.tertiaryDark,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3.84,
-    elevation: 2,
   },
-  cardHeader: {
+
+  linkInfo: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.secondary + "20",
-    justifyContent: "center",
-    alignItems: "center",
+
+  icon: {
     marginRight: 12,
   },
-  cardInfo: {
-    flex: 1,
-  },
+
   linkTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: Colors.quaternary,
+    color: Colors.primaryDark,
     marginBottom: 4,
   },
-  linkDescription: {
-    fontSize: 13,
-    color: Colors.quaternary + "90", // slightly faded
-  },
-  linkDisplay: {
-    backgroundColor: Colors.tertiaryDark + "40", // light background
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  urlText: {
+
+  linkSubTitle: {
     fontSize: 14,
-    color: Colors.primaryDark,
+    fontWeight: "500",
+    color: Colors.secondary,
+    marginBottom: 4,
   },
+
+  linkName: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: Colors.primary,
+    marginBottom: 4,
+  },
+
+  linkUrl: {
+    fontSize: 14,
+    color: Colors.secondary,
+  },
+
   actionsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: Colors.quaternary + "20",
+    paddingTop: 12,
   },
+
   actionBtn: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.primary,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    gap: 6,
+    flex: 1,
+    marginHorizontal: 4,
+    backgroundColor: Colors.quaternary + "10",
   },
+
+  primaryActionBtn: {
+    backgroundColor: Colors.primary,
+  },
+
   actionText: {
-    color: Colors.tertiary,
+    marginLeft: 6,
     fontSize: 14,
     fontWeight: "600",
+    color: Colors.secondaryDark,
   },
-  copyBtn: {
-    backgroundColor: Colors.tertiary,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  copyText: {
-    color: Colors.primary,
-  },
-  shareBtn: {
-    backgroundColor: Colors.tertiary,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  shareText: {
-    color: Colors.primary,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 60,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: Colors.quaternary,
-    marginTop: 16,
-    fontWeight: "500",
+
+  primaryActionText: {
+    color: Colors.tertiary,
   },
 });
 
