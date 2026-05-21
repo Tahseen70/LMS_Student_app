@@ -19,6 +19,10 @@ if (!global.atob) {
 // now it's safe to import jsPDF
 import { jsPDF } from "jspdf";
 
+// const SERVER_URL = "https://server.graderlms.com";
+const SERVER_URL =
+  "https://bb78-2407-d000-11-e15-f438-d3de-3f7e-3a5e.ngrok-free.app";
+
 // ✅ wrap baseUri usage in a validator
 const getBaseUri = async () => {
   let baseUri = await AsyncStorage.getItem("baseUri");
@@ -504,6 +508,7 @@ const getExtensionName = (url) => {
 export {
   assetImages,
   BASE_URL,
+  SERVER_URL,
   formatCNIC,
   formatNumber,
   generateChallan,

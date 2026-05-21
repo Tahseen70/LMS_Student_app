@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import Loader from "../../components/Loader";
 import { hexToRgba } from "../../config";
 import Colors from "../../styles/Colors";
+import usePushNotifications from "../../components/PushNotifications";
 
 const TeacherLayout = () => {
   const Student = useSelector((state) => state.Student);
@@ -17,6 +18,8 @@ const TeacherLayout = () => {
       (slice) => slice && typeof slice === "object" && slice.loading,
     ),
   );
+
+  usePushNotifications({ userId: student?._id });
   // Redirect to login if user is not authenticated
   if (!student) return <Redirect href="/auth/login" />;
 
